@@ -12,4 +12,9 @@ class PresensiGuru extends Model
         'lokasi',
         'user_id'
     ];
+
+    public function presensi()
+    {
+        return $this->belongsTo(User::class);
+    }
 }

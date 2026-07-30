@@ -32,6 +32,11 @@ class User extends Authenticatable
 
     public function santri()
     {
-        return $this->hasMany()
+        return $this->hasMany(Santri::class, 'guru_id');
+    }
+
+    public function presensi()
+    {
+        return $this->hasMany(PresensiGuru::class);
     }
 }

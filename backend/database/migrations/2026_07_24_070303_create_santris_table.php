@@ -18,8 +18,8 @@ return new class extends Migration
             $table->enum('kategori', ['ikh', 'akh']);
             $table->integer('jumlah_hafalan');
             $table->foreignId('kelas_id')->nullable()->constrained()->onDelete('set null');
-            $table->unsignedBigInteger('guru_id');
-            $table->foreign('guru_id')->nullable()->references('id')->on('users')->onDelete('set null');
+            $table->unsignedBigInteger('guru_id')->nullable();
+            $table->foreign('guru_id')->references('id')->on('users')->onDelete('set null');
             $table->timestamps();
         });
     }

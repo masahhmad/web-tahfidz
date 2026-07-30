@@ -11,4 +11,9 @@ class PresensiSiswa extends Model
         'keterangan',
         'santri_id'
     ];
+
+    public function santri()
+    {
+        return $this->belongsTo(Santri::class);
+    }
 }

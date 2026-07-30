@@ -13,4 +13,9 @@ class KenaikanJuz extends Model
         'nilai_tambahan',
         'santri_id'
     ];
+
+    public function santri()
+    {
+        return $this->belongsTo(Santri::class);
+    }
 }

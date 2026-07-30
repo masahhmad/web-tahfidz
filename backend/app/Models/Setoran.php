@@ -10,4 +10,9 @@ class Setoran extends Model
         'baris',
         'santri_id'
     ];
+
+    public function santri()
+    {
+        return $this->belongsTo(Santri::class);
+    }
 }
