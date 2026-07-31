@@ -10,40 +10,28 @@ class AuthController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function login(Request $request)
     {
-        //
-    }
+        $credential = $request->validate([
+            'email' => 'required|email',
+            'password'=> 'required'
+        ]);
 
-    /**
-     * Store a newly created resource in storage.
-     */
-    public function store(Request $request)
-    {
-        //
-    }
+        /** @var \PHPOpenSourceSaver\JWTAuth\JWTGuard $auth */
+        $auth = auth('api');
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id)
-    {
-        //
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
-    {
-        //
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        if (! $accessToken = $auth->attempt($credential)) {
+            return response()->json([
+                'status'       => 'failed',
+                'message' => "Incorrect email or password"
+            ]);
+        }
+        return response()->json([
+            'status'       => 'success',
+            'access_token' => $accessToken,
+            'token_type'   => 'bearer',
+            'expires_in'   => $auth->factory()->getTTL() * 60,
+            'user'         => $auth->user()
+        ]);
     }
 }
