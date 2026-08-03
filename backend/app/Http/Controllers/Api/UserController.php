@@ -7,6 +7,9 @@ use App\Http\Resources\UserResource;
 use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+
+use function PHPSTORM_META\map;
 
 class UserController extends Controller
 {
@@ -16,7 +19,10 @@ class UserController extends Controller
     public function index(): JsonResponse
     {
         $data = User::all();
-        return response()->json($data);
+        return response()->json([
+            'status'  => 'success',
+            'data'    => UserResource::collection($data)
+        ]);
     }
 
     /**
@@ -26,10 +32,10 @@ class UserController extends Controller
     {
         $validated = $request->validate([
             'username' => 'required|min:3',
-            'email' => 'required|email',
+            'email' => 'required|unique:users,email|email',
             'password' => 'required|between:6, 12',
-            'category' => 'required',
-            'role' => 'required'
+            'category' => ['required', Rule::in(['ikh', 'akh'])],
+            'role' => ['required', Rule::in(['admin', 'guru_halaqah'])]
         ]);
 
         $user = User::create($validated);
@@ -49,15 +55,15 @@ class UserController extends Controller
 
         if (!$user) {
             return response()->json([
-                'status'=> 'failed',
-                'message'=> 'User not found'
+                'status' => 'failed',
+                'message' => 'User not found'
             ]);
         }
 
         return response()->json([
-            'status'=> 'success',
-            'message'=> 'Success get user',
-            'user'=> new UserResource($user)
+            'status' => 'success',
+            'message' => 'Success get user',
+            'user' => new UserResource($user)
         ]);
     }
 
@@ -66,7 +72,25 @@ class UserController extends Controller
      */
     public function update(Request $request, User $user)
     {
-        $user->update($request->validated());
+        $validated = $request->validate([
+            'username' => [
+                'required',
+                'string',
+                'min:3',
+                Rule::unique('users', 'username')->ignore($user->id) // Unik, abaikan ID sendiri
+            ],
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('users', 'email')->ignore($user->id) // Unik, abaikan ID sendiri
+            ],
+            // Nullable agar password tidak wajib diisi jika pengguna tidak mau ganti password
+            'password' => 'nullable|between:6,12',
+            'category' => ['required', Rule::in(['ikh', 'akh'])],
+            'role'     => ['required', Rule::in(['admin', 'guru_halaqah'])]
+        ]);
+
+        $user->update($validated);
 
         return response()->json([
             'status'  => 'success',

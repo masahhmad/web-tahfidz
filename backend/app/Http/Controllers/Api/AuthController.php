@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\User;
 use Illuminate\Http\Request;
 
 class AuthController extends Controller
@@ -32,6 +33,18 @@ class AuthController extends Controller
             'token_type'   => 'bearer',
             'expires_in'   => $auth->factory()->getTTL() * 60,
             'user'         => $auth->user()
+        ]);
+    }
+
+    public function logout()
+    {
+        /** @var \PHPOpenSourceSaver\JWTAuth\JWTGuard $auth */
+        $auth = auth('api');
+        $auth->logout();
+
+        return response()->json([
+            'status'  => 'success',
+            'message' => 'Berhasil logout'
         ]);
     }
 }
