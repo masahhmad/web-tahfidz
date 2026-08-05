@@ -45,7 +45,7 @@ class KelasController extends Controller
      */
     public function show(string $id): JsonResponse
     {
-        $kelas = Kelas::findOrFail($id);
+        $kelas = Kelas::find($id);
 
         if (!$kelas) {
             return response()->json([
@@ -64,26 +64,37 @@ class KelasController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Kelas $kelas)
+    public function update(Request $request, Kelas $kela)
     {
+        $kelas = $kela;
         $validated = $request->validate([
-            'kategori'=> ['required', Rule::in(['ikh', 'akh'])],
+            'kelas'          => 'required|string',
+            'kategori'       => ['required', Rule::in(['ikh', 'akh'])],
+            'target_hafalan' => 'nullable|integer'
         ]);
 
-        $kelas->update($validated);
+        $updated = $kelas->update($validated);
+
+        if (!$updated) {
+            return response()->json([
+                'status'  => 'error',
+                'message' => 'Gagal memperbarui data kelas di database',
+            ], 500);
+        }
 
         return response()->json([
             'status'  => 'success',
             'message' => 'Data kelas berhasil diperbarui',
             'data'    => $kelas
-        ]);
+        ], 200);
     }
 
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Kelas $kelas)
+    public function destroy(Kelas $kela)
     {
+        $kelas = $kela;
         $kelas->delete();
 
         return response()->json([
