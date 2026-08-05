@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\KelasController;
+use App\Http\Controllers\Api\SantriController;
 use App\Http\Controllers\Api\UserController;
 use Illuminate\Support\Facades\Route;
 
@@ -17,5 +18,9 @@ Route::middleware('auth:api')->group(function(){
     Route::middleware('role:super_admin')->group(function() {
         Route::apiResource('/user', UserController::class);
         Route::apiResource('/kelas', KelasController::class);
+    });
+
+    Route::middleware('role:super_admin, admin')->group(function() {
+        Route::apiResource('/santri', SantriController::class);
     });
 });
