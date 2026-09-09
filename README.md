@@ -97,7 +97,7 @@ php artisan migrate
 php artisan serve
 ```
 
-Backend berjalan di http://localhost:8000
+Backend berjalan di http://localhost:8000.
 
 ### Frontend (Next.js)
 
