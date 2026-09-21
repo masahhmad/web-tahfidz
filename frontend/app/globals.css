@@ -1,0 +1,124 @@
+@import "tailwindcss";
+
+/* -------------------------------------------------------------------------
+ * Theme tokens. Every color in the UI comes from one of these semantic
+ * tokens (used as bg-card, text-ink, border-line, ...). :root holds the light
+ * palette; `.dark` on <html> swaps in the "Nocturnal Al-Hafiz" dark palette
+ * from DESIGN.md (Level 0 #111827 page, Level 1 #1F2937 cards, Level 2
+ * #374151 modals, emerald #10B981 for interactive elements).
+ * ---------------------------------------------------------------------- */
+:root {
+  color-scheme: light;
+
+  --page: #f8f9fa;
+  --card: #ffffff;
+  --card-edge: #ffffff;
+  --modal: #ffffff;
+  --field: #ffffff;
+
+  --ink: #191c1d;
+  --muted: #404944;
+  --soft: #8a9490;
+  --icon: #6b7280;
+
+  --line: #e1e3e4;
+  --line-strong: #707974;
+  --divider: #eff0f1;
+
+  --hover: #edeeef;
+  --hover-soft: #f8f9fa;
+
+  --brand: #003527;
+  --brand-hover: #064e3b;
+  --on-brand: #ffffff;
+
+  --mint: #6cf8bb;
+  --on-mint: #00714d;
+  --warn: #fdecc8;
+  --on-warn: #8a5a00;
+  --bad: #fbd1d1;
+  --on-bad: #a01818;
+  --danger: #ba1a1a;
+
+  --avatar: #dcdce6;
+}
+
+.dark {
+  color-scheme: dark;
+
+  --page: #111827;
+  --card: #1f2937;
+  --card-edge: #374151;
+  --modal: #374151;
+  --field: #111827;
+
+  --ink: #f9fafb;
+  --muted: #9ca3af;
+  --soft: #7f8896;
+  --icon: #9ca3af;
+
+  --line: #374151;
+  --line-strong: #10b981;
+  --divider: #374151;
+
+  --hover: #2d3748;
+  --hover-soft: #2d3748;
+
+  --brand: #10b981;
+  --brand-hover: #34d399;
+  --on-brand: #111827;
+
+  --mint: #064e3b;
+  --on-mint: #6cf8bb;
+  --warn: #4a3a12;
+  --on-warn: #fdecc8;
+  --bad: #93000a;
+  --on-bad: #ffdad6;
+  --danger: #ffb4ab;
+
+  --avatar: #374151;
+}
+
+@theme inline {
+  --color-page: var(--page);
+  --color-card: var(--card);
+  --color-card-edge: var(--card-edge);
+  --color-modal: var(--modal);
+  --color-field: var(--field);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-soft: var(--soft);
+  --color-icon: var(--icon);
+  --color-line: var(--line);
+  --color-line-strong: var(--line-strong);
+  --color-divider: var(--divider);
+  --color-hover: var(--hover);
+  --color-hover-soft: var(--hover-soft);
+  --color-brand: var(--brand);
+  --color-brand-hover: var(--brand-hover);
+  --color-on-brand: var(--on-brand);
+  --color-mint: var(--mint);
+  --color-on-mint: var(--on-mint);
+  --color-warn: var(--warn);
+  --color-on-warn: var(--on-warn);
+  --color-bad: var(--bad);
+  --color-on-bad: var(--on-bad);
+  --color-danger: var(--danger);
+  --color-avatar: var(--avatar);
+
+  --font-sans: var(--font-poppins);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: var(--font-poppins), Arial, Helvetica, sans-serif;
+}
+
+/* DESIGN.md: inputs get an emerald border on focus (dark mode). */
+.dark input:focus,
+.dark select:focus,
+.dark textarea:focus {
+  border-color: var(--brand);
+}
