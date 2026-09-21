@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { NavIcon, icons } from "./icons";
-import { NAV_ITEMS, FOOTER_ITEMS, type NavItem } from "./nav-data";
+import { NAV_ITEMS, FOOTER_ITEMS, HELP_OPTIONS, type NavItem } from "./nav-data";
 
 /* -------------------------------------------------------------------------
  * SidebarItem — one nav row, active/inactive states from Figma
@@ -42,6 +42,50 @@ function SidebarItem({
     <a href="#" onClick={onClick} aria-current={isActive ? "page" : undefined} className={className}>
       {content}
     </a>
+  );
+}
+
+/* -------------------------------------------------------------------------
+ * HelpMenu — the "Bantuan" footer row as a disclosure dropdown: pressing it
+ * expands the Admin / Developer options right below it (inline, so it also
+ * works inside the scrollable mobile drawer without being clipped).
+ * ---------------------------------------------------------------------- */
+function HelpMenu({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuId = useId();
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-expanded={isOpen}
+        aria-controls={menuId}
+        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[14px] leading-[20px] text-muted transition-colors hover:bg-hover-soft"
+      >
+        <NavIcon size={15}>{icons[item.icon]}</NavIcon>
+        <span className="flex-1 text-left">{item.label}</span>
+        <NavIcon size={15} className={`transition-transform ${isOpen ? "rotate-180" : ""}`}>
+          {icons.chevronDown}
+        </NavIcon>
+      </button>
+
+      {isOpen && (
+        <ul id={menuId} className="mt-1 flex flex-col gap-1 pl-7">
+          {HELP_OPTIONS.map((option) => (
+            <li key={option.id}>
+              <a
+                href="#"
+                onClick={onNavigate}
+                className="flex w-full items-center rounded-lg px-4 py-2.5 text-[14px] leading-[20px] text-muted transition-colors hover:bg-hover-soft"
+              >
+                {option.label}
+              </a>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
   );
 }
 
@@ -100,9 +144,13 @@ function SidebarContent({
 
       {/* Footer Links */}
       <div className="flex w-full flex-col gap-2 border-t border-line pt-[13px]">
-        {FOOTER_ITEMS.map((item) => (
-          <SidebarItem key={item.id} item={item} isActive={false} onClick={onNavigate} />
-        ))}
+        {FOOTER_ITEMS.map((item) =>
+          item.id === "bantuan" ? (
+            <HelpMenu key={item.id} item={item} onNavigate={onNavigate} />
+          ) : (
+            <SidebarItem key={item.id} item={item} isActive={false} onClick={onNavigate} />
+          ),
+        )}
       </div>
     </div>
   );

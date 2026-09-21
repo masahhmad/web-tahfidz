@@ -19,6 +19,12 @@ export const NAV_ITEMS: NavItem[] = [
   { id: "pengaturan", label: "Pengaturan", icon: "settings", href: "/dashboard/pengaturan" },
 ];
 
+/* Options shown in the "Bantuan" dropdown — who the user can ask for help. */
+export const HELP_OPTIONS = [
+  { id: "admin", label: "Admin" },
+  { id: "developer", label: "Developer" },
+] as const;
+
 /* Footer links have no page routes yet ("Keluar" will be a sign-out action,
  * not a navigation target), so they keep rendering as inert anchors. */
 export const FOOTER_ITEMS: NavItem[] = [
