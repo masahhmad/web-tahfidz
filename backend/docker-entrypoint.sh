@@ -9,6 +9,10 @@ if ! grep -q '^APP_KEY=base64' .env; then
     php artisan key:generate --ansi --force
 fi
 
+if ! grep -q '^JWT_SECRET=.\+' .env; then
+    php artisan jwt:secret --force --no-interaction
+fi
+
 if grep -q '^DB_CONNECTION=sqlite' .env && [ ! -f database/database.sqlite ]; then
     touch database/database.sqlite
 fi

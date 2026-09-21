@@ -3,196 +3,93 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\PresensiGuruResource;
 use App\Models\PresensiGuru;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 use Illuminate\Validation\Rule;
-use Throwable;
 
+/**
+ * guru_halaqah hanya membaca presensi miliknya; admin & super_admin membaca semua.
+ * Membuat presensi: admin & guru_halaqah (untuk diri sendiri). Koreksi/hapus: super_admin.
+ */
 class PresensiGuruController extends Controller
 {
-    /**
-     * Mengambil semua data presensi (Super Admin / Rekap).
-     */
-    public function getAllAtendance(): JsonResponse
-    {
-        try {
-            $data = PresensiGuru::all();
-
-            if ($data->isEmpty()) {
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Data presensi masih kosong',
-                    'data'    => []
-                ], 200);
-            }
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Berhasil mengambil semua data presensi guru',
-                'data'    => $data
-            ], 200);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal mengambil data presensi: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Mengambil data presensi khusus guru yang sedang login.
-     */
     public function index(Request $request): JsonResponse
     {
-        try {
-            $userId = $request->user()->id;
-            $data   = PresensiGuru::where('user_id', $userId)->get();
+        $user = $request->user('api');
 
-            if ($data->isEmpty()) {
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Anda belum memiliki riwayat presensi',
-                    'data'    => []
-                ], 200);
-            }
+        $request->validate([
+            'tanggal' => 'nullable|date_format:Y-m-d',
+            'sesi'    => ['nullable', Rule::in(['pagi', 'siang', 'sore'])],
+        ]);
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Berhasil mengambil riwayat presensi guru',
-                'data'    => $data
-            ], 200);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal mengambil riwayat presensi: ' . $e->getMessage()
-            ], 500);
-        }
+        $presensi = PresensiGuru::query()
+            ->with('user')
+            ->when($user->role === 'guru_halaqah',
+                fn ($q) => $q->where('user_id', $user->id),
+                fn ($q) => $q->when($request->query('user_id'), fn ($q, $id) => $q->where('user_id', $id)))
+            ->when($request->query('tanggal'), fn ($q, $tanggal) => $q->whereDate('tanggal', $tanggal))
+            ->when($request->query('sesi'), fn ($q, $sesi) => $q->where('sesi', $sesi))
+            ->orderByDesc('tanggal')
+            ->orderByDesc('id')
+            ->paginate($this->perPage($request));
+
+        return $this->paginated($presensi, PresensiGuruResource::class);
     }
 
-    /**
-     * Menyimpan presensi baru.
-     */
     public function store(Request $request): JsonResponse
     {
+        $validated = $request->validate($this->rules());
+
         try {
-            $validated = $request->validate([
-                'status'     => ['required', Rule::in(['hadir', 'izin', 'sakit'])],
-                'keterangan' => 'nullable|string|max:255',
-                'lokasi'     => 'nullable|string|max:255',
-                'user_id'    => 'required|integer|exists:users,id',
-            ], [
-                'status.required' => 'Status presensi wajib diisi!',
-                'status.in'       => 'Status hanya boleh berisi hadir, izin, atau sakit.',
-                'user_id.required' => 'User ID wajib diisi!',
-                'user_id.exists'  => 'User/Guru tidak ditemukan di sistem.',
-            ]);
-
-            $presensi = PresensiGuru::create($validated);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Presensi berhasil dicatat',
-                'data'    => $presensi
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            // Throw kembali agar penanganan error validasi bawaan Laravel (422) tetap berjalan
-            throw $e;
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal mencatat presensi: ' . $e->getMessage()
-            ], 500);
+            // user_id selalu dari token, bukan dari body.
+            $presensi = PresensiGuru::create($validated + ['user_id' => $request->user('api')->id]);
+        } catch (UniqueConstraintViolationException) {
+            return $this->sudahAda();
         }
+
+        return $this->item(new PresensiGuruResource($presensi->load('user')), 201);
+    }
+
+    public function update(Request $request, PresensiGuru $presensiGuru): JsonResponse
+    {
+        $validated = $request->validate($this->rules());
+
+        try {
+            $presensiGuru->update($validated);
+        } catch (UniqueConstraintViolationException) {
+            return $this->sudahAda();
+        }
+
+        return $this->item(new PresensiGuruResource($presensiGuru->load('user')));
+    }
+
+    public function destroy(PresensiGuru $presensiGuru): JsonResponse|Response
+    {
+        $presensiGuru->delete();
+
+        return response()->noContent();
     }
 
     /**
-     * Menampilkan detail 1 presensi berdasarkan ID.
+     * @return array<string, mixed>
      */
-    public function show(string $id): JsonResponse
+    private function rules(): array
     {
-        try {
-            $presensi = PresensiGuru::findOrFail($id);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Berhasil mengambil detail presensi',
-                'data'    => $presensi
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data presensi tidak ditemukan'
-            ], 404);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-            ], 500);
-        }
+        return [
+            'tanggal'    => 'required|date_format:Y-m-d',
+            'sesi'       => ['required', Rule::in(['pagi', 'siang', 'sore'])],
+            'status'     => ['required', Rule::in(['hadir', 'izin', 'sakit', 'alpa'])],
+            'keterangan' => 'required_unless:status,hadir|nullable|string|max:255',
+            'lokasi'     => 'nullable|string|max:100',
+        ];
     }
 
-    /**
-     * Memperbarui data presensi.
-     */
-    public function update(Request $request, string $id): JsonResponse
+    private function sudahAda(): JsonResponse
     {
-        try {
-            $presensi = PresensiGuru::findOrFail($id);
-
-            $validated = $request->validate([
-                'status'     => ['required', Rule::in(['hadir', 'izin', 'sakit'])],
-                'keterangan' => 'nullable|string|max:255',
-                'lokasi'     => 'nullable|string|max:255',
-                'user_id'    => 'required|integer|exists:users,id',
-            ]);
-
-            $presensi->update($validated);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data presensi berhasil diperbarui',
-                'data'    => $presensi->fresh()
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data presensi tidak ditemukan'
-            ], 404);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal memperbarui data presensi: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Menghapus data presensi.
-     */
-    public function destroy(string $id): JsonResponse
-    {
-        try {
-            $presensi = PresensiGuru::findOrFail($id);
-            $presensi->delete();
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data presensi berhasil dihapus'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data presensi yang akan dihapus tidak ditemukan'
-            ], 404);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal menghapus data presensi: ' . $e->getMessage()
-            ], 500);
-        }
+        return $this->message('Presensi untuk tanggal dan sesi ini sudah ada.', 409);
     }
 }

@@ -73,6 +73,7 @@ export function ProfileCard() {
           isOpen
           onClose={() => setIsResetting(false)}
           userName={profile.name}
+          requireCurrent
           // Placeholder until the backend exists; the password is not stored client-side.
           onSave={() => setIsResetting(false)}
         />

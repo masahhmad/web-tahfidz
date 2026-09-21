@@ -3,181 +3,116 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\KenaikanJuzResource;
 use App\Models\KenaikanJuz;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
+use App\Models\Santri;
+use Illuminate\Database\UniqueConstraintViolationException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Throwable;
+use Illuminate\Http\Response;
+use Illuminate\Validation\Rule;
 
+/**
+ * Ujian Kenaikan Juz.
+ *  - baca: admin & super_admin semua baris; guru_halaqah baris yang ia ampu/uji.
+ *  - buat baris: admin (semua siswa) & guru_halaqah (siswanya); hapus: admin.
+ *  - nilai: `nilai_hafalan` oleh pengampu siswa, `nilai_soal` oleh penguji baris tsb.
+ */
 class KenaikanJuzController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(): JsonResponse
+    private const WITH = ['santri.kelas', 'santri.pengampu', 'penguji'];
+
+    public function index(Request $request): JsonResponse
     {
-        try {
-            $data = KenaikanJuz::all();
+        $user = $request->user('api');
 
-            if ($data->isEmpty()) {
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Data kenaikan juz masih kosong',
-                    'data'    => []
-                ], 200);
-            }
+        $request->validate(['juz' => 'nullable|integer|between:1,30']);
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Berhasil mengambil semua data kenaikan juz',
-                'data'    => $data
-            ], 200);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal mengambil data kenaikan juz: ' . $e->getMessage()
-            ], 500);
-        }
+        $ujian = KenaikanJuz::query()
+            ->with(self::WITH)
+            ->when($user->role === 'guru_halaqah', fn ($q) => $q->where(function ($q) use ($user) {
+                $q->where('penguji_id', $user->id)
+                  ->orWhereHas('santri', fn ($q) => $q->where('guru_id', $user->id));
+            }))
+            ->when($request->query('juz'), fn ($q, $juz) => $q->where('juz', $juz))
+            ->when($request->query('kelas_id'), fn ($q, $id) => $q->whereHas('santri', fn ($q) => $q->where('kelas_id', $id)))
+            ->when($request->query('search'), fn ($q, $term) => $q->whereHas('santri', fn ($q) => $q->where('nama', 'like', $this->like($term))))
+            ->orderBy('juz')
+            ->orderBy('id')
+            ->paginate($this->perPage($request));
+
+        return $this->paginated($ujian, KenaikanJuzResource::class);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    /** Tombol "Tambah Siswa": baris ujian dibuat dengan nilai kosong. */
     public function store(Request $request): JsonResponse
     {
+        $user = $request->user('api');
+
+        $validated = $request->validate([
+            'santri_id'  => ['required', 'integer', Rule::exists('santris', 'id')->whereNull('deleted_at')],
+            'juz'        => 'required|integer|between:1,30',
+            'penguji_id' => ['nullable', 'integer', Rule::exists('users', 'id')->where('role', 'guru_halaqah')->where('is_active', true)],
+        ], [
+            'penguji_id.exists' => 'Penguji harus guru halaqah yang aktif.',
+        ]);
+
+        $santri = Santri::findOrFail($validated['santri_id']);
+
+        if ($user->role === 'guru_halaqah' && ! $santri->isTaughtBy($user)) {
+            return $this->forbidden('Anda hanya dapat menambahkan ujian untuk siswa yang Anda ampu.');
+        }
+
         try {
-            $validated = $request->validate([
-                'juz'            => 'required|integer|between:1,30',
-                'nilai_setoran'  => 'required|integer|between:0,100',
-                'nilai_soal'     => 'required|integer|between:0,100',
-                'nilai_tambahan' => 'nullable|integer|between:0,100',
-                'santri_id'      => 'required|integer|exists:santris,id',
-            ], [
-                'juz.required'           => 'Juz wajib diisi!',
-                'juz.between'            => 'Juz harus di antara 1 sampai 30.',
-                'nilai_setoran.required' => 'Nilai setoran wajib diisi!',
-                'nilai_setoran.between'  => 'Nilai setoran harus bernilai 0 - 100.',
-                'nilai_soal.required'    => 'Nilai soal wajib diisi!',
-                'nilai_soal.between'     => 'Nilai soal harus bernilai 0 - 100.',
-                'nilai_tambahan.between' => 'Nilai tambahan harus bernilai 0 - 100.',
-                'santri_id.required'     => 'Santri wajib dipilih!',
-                'santri_id.exists'       => 'Data santri tidak ditemukan di sistem.',
+            $ujian = KenaikanJuz::create([
+                'santri_id'  => $santri->id,
+                'juz'        => $validated['juz'],
+                'penguji_id' => $validated['penguji_id'] ?? null,
             ]);
-
-            $kenaikanJuz = KenaikanJuz::create($validated);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data kenaikan juz berhasil ditambahkan',
-                'data'    => $kenaikanJuz
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal menambahkan data kenaikan juz: ' . $e->getMessage()
-            ], 500);
+        } catch (UniqueConstraintViolationException) {
+            // Ujian ulang dilakukan dengan mengubah nilai baris yang sama (PATCH), bukan membuat baris baru.
+            return $this->message('Ujian juz ini sudah ada untuk siswa tersebut.', 409);
         }
+
+        return $this->item(new KenaikanJuzResource($ujian->load(self::WITH)), 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show(string $id): JsonResponse
+    public function nilai(Request $request, KenaikanJuz $kenaikanJuz): JsonResponse
     {
-        try {
-            $kenaikanJuz = KenaikanJuz::findOrFail($id);
+        $user = $request->user('api');
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Berhasil mengambil detail kenaikan juz',
-                'data'    => $kenaikanJuz
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data kenaikan juz tidak ditemukan'
-            ], 404);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-            ], 500);
+        $validated = $request->validate([
+            'nilai_hafalan' => 'required_without:nilai_soal|nullable|integer|between:0,100',
+            'nilai_soal'    => 'required_without:nilai_hafalan|nullable|integer|between:0,100',
+        ]);
+
+        $isPengampu = $kenaikanJuz->santri->isTaughtBy($user);
+        $isPenguji = $kenaikanJuz->penguji_id !== null && (int) $kenaikanJuz->penguji_id === (int) $user->id;
+
+        // Field yang bukan hak pemanggil ditolak (bukan diabaikan diam-diam).
+        if (array_key_exists('nilai_hafalan', $validated) && ! $isPengampu) {
+            return $this->forbidden('Nilai hafalan hanya dapat diisi oleh pengampu siswa.');
         }
+        if (array_key_exists('nilai_soal', $validated) && ! $isPenguji) {
+            return $this->forbidden('Nilai soal hanya dapat diisi oleh penguji yang ditunjuk.');
+        }
+
+        $data = [];
+        if (array_key_exists('nilai_hafalan', $validated)) {
+            $data['nilai_setoran'] = $validated['nilai_hafalan']; // kolom DB: nilai_setoran
+        }
+        if (array_key_exists('nilai_soal', $validated)) {
+            $data['nilai_soal'] = $validated['nilai_soal'];
+        }
+        $kenaikanJuz->update($data);
+
+        return $this->item(new KenaikanJuzResource($kenaikanJuz->load(self::WITH)));
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id): JsonResponse
+    public function destroy(KenaikanJuz $kenaikanJuz): JsonResponse|Response
     {
-        try {
-            $kenaikanJuz = KenaikanJuz::findOrFail($id);
+        $kenaikanJuz->delete();
 
-            $validated = $request->validate([
-                'juz'            => 'required|integer|between:1,30',
-                'nilai_setoran'  => 'required|integer|between:0,100',
-                'nilai_soal'     => 'required|integer|between:0,100',
-                'nilai_tambahan' => 'nullable|integer|between:0,100',
-                'santri_id'      => 'required|integer|exists:santris,id',
-            ], [
-                'juz.required'           => 'Juz wajib diisi!',
-                'juz.between'            => 'Juz harus di antara 1 sampai 30.',
-                'nilai_setoran.required' => 'Nilai setoran wajib diisi!',
-                'nilai_setoran.between'  => 'Nilai setoran harus bernilai 0 - 100.',
-                'nilai_soal.required'    => 'Nilai soal wajib diisi!',
-                'nilai_soal.between'     => 'Nilai soal harus bernilai 0 - 100.',
-                'nilai_tambahan.between' => 'Nilai tambahan harus bernilai 0 - 100.',
-                'santri_id.required'     => 'Santri wajib dipilih!',
-                'santri_id.exists'       => 'Data santri tidak ditemukan di sistem.',
-            ]);
-
-            $kenaikanJuz->update($validated);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data kenaikan juz berhasil diperbarui',
-                'data'    => $kenaikanJuz->fresh()
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data kenaikan juz tidak ditemukan'
-            ], 404);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal memperbarui data kenaikan juz: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id): JsonResponse
-    {
-        try {
-            $kenaikanJuz = KenaikanJuz::findOrFail($id);
-            $kenaikanJuz->delete();
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data kenaikan juz berhasil dihapus'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data kenaikan juz yang akan dihapus tidak ditemukan'
-            ], 404);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal menghapus data kenaikan juz: ' . $e->getMessage()
-            ], 500);
-        }
+        return response()->noContent();
     }
 }

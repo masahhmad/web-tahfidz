@@ -11,7 +11,10 @@ const fieldControl =
 /* -------------------------------------------------------------------------
  * ResetPasswordModal — popup opened from a row's key button. Two inputs:
  * the new password and its confirmation; saving is blocked (with an inline
- * error) until both match. Rendered through a portal for the same reason as
+ * error) until both match. With `requireCurrent` (the user's own password on
+ * Pengaturan) it also asks for the current password, which the API requires
+ * (`current_password`); resetting someone else's password (Pengguna) does not.
+ * Rendered through a portal for the same reason as
  * EditPenggunaModal — it is opened from inside a table row.
  * ---------------------------------------------------------------------- */
 export function ResetPasswordModal({
@@ -19,13 +22,16 @@ export function ResetPasswordModal({
   onClose,
   userName,
   onSave,
+  requireCurrent = false,
 }: {
   isOpen: boolean;
   onClose: () => void;
   userName: string;
-  onSave: (password: string) => void;
+  onSave: (password: string, currentPassword?: string) => void;
+  requireCurrent?: boolean;
 }) {
   const panelRef = useModalA11y(isOpen, onClose);
+  const [current, setCurrent] = useState("");
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
 
@@ -36,7 +42,7 @@ export function ResetPasswordModal({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (password === "" || password !== confirm) return;
-    onSave(password);
+    onSave(password, requireCurrent ? current : undefined);
   }
 
   return createPortal(
@@ -58,8 +64,23 @@ export function ResetPasswordModal({
         <p className="pb-3 text-center text-[14px] leading-5 text-muted">{userName}</p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+          {requireCurrent && (
+            <label className="flex flex-col gap-1.5">
+              <span className={fieldLabel}>Kata Sandi Saat Ini</span>
+              <input
+                type="password"
+                required
+                autoComplete="current-password"
+                value={current}
+                onChange={(event) => setCurrent(event.target.value)}
+                placeholder="Kata Sandi Saat Ini"
+                className={fieldControl}
+              />
+            </label>
+          )}
+
           <label className="flex flex-col gap-1.5">
-            <span className={fieldLabel}>Kata Sandi</span>
+            <span className={fieldLabel}>Kata Sandi Baru</span>
             <input
               type="password"
               required

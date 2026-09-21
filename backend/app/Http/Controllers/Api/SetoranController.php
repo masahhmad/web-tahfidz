@@ -3,169 +3,109 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\SetoranResource;
+use App\Models\Santri;
 use App\Models\Setoran;
-use Illuminate\Database\Eloquent\ModelNotFoundException;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
-use Throwable;
+use Illuminate\Validation\Rule;
+use Illuminate\Http\Response;
 
+/**
+ * guru_halaqah: CRUD untuk siswa yang ia ampu. admin: CRUD semua. super_admin: hanya baca.
+ */
 class SetoranController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        try {
-            $data = Setoran::all();
+        $user = $request->user('api');
 
-            if ($data->isEmpty()) {
-                return response()->json([
-                    'status'  => 'success',
-                    'message' => 'Data setoran masih kosong',
-                    'data'    => []
-                ], 200);
-            }
+        $request->validate([
+            'tanggal' => 'nullable|date_format:Y-m-d',
+            'juz'     => 'nullable|integer|between:1,30',
+        ]);
 
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Berhasil mengambil semua data setoran',
-                'data'    => $data
-            ], 200);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal mengambil data setoran: ' . $e->getMessage()
-            ], 500);
-        }
+        $setoran = Setoran::query()
+            ->with('santri.kelas')
+            ->whereHas('santri', fn ($q) => $q->visibleTo($user))
+            ->when($request->query('santri_id'), fn ($q, $id) => $q->where('santri_id', $id))
+            ->when($request->query('juz'), fn ($q, $juz) => $q->where('juz', $juz))
+            ->when($request->query('tanggal'), fn ($q, $tanggal) => $q->whereDate('tanggal', $tanggal))
+            ->when($request->query('search'), fn ($q, $term) => $q->whereHas('santri', fn ($q) => $q->where('nama', 'like', $this->like($term))))
+            ->orderByDesc('tanggal')
+            ->orderByDesc('id')
+            ->paginate($this->perPage($request));
+
+        return $this->paginated($setoran, SetoranResource::class);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
     public function store(Request $request): JsonResponse
     {
-        try {
-            $validated = $request->validate([
-                'baris'     => 'required|integer|min:1',
-                'santri_id' => 'required|integer|exists:santris,id',
-            ], [
-                'baris.required'     => 'Jumlah baris setoran wajib diisi!',
-                'baris.integer'      => 'Baris harus berupa angka!',
-                'baris.min'          => 'Jumlah baris setoran minimal 1!',
-                'santri_id.required' => 'Santri wajib dipilih!',
-                'santri_id.integer'  => 'Format ID Santri tidak valid!',
-                'santri_id.exists'   => 'Data santri tidak ditemukan di sistem.',
-            ]);
+        $validated = $request->validate($this->rules());
 
-            $setoran = Setoran::create($validated);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data setoran berhasil ditambahkan',
-                'data'    => $setoran
-            ], 201);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal menambahkan data setoran: ' . $e->getMessage()
-            ], 500);
+        if (! $this->canManage($request, Santri::findOrFail($validated['santri_id']))) {
+            return $this->forbidden();
         }
+
+        $setoran = Setoran::create([
+            'santri_id' => $validated['santri_id'],
+            'juz'       => $validated['juz'],
+            'baris'     => $validated['baris'],
+            'tanggal'   => $validated['tanggal'] ?? now()->toDateString(),
+            'guru_id'   => $request->user('api')->id, // pencatat dari token
+        ]);
+
+        return $this->item(new SetoranResource($setoran->load('santri.kelas')), 201);
+    }
+
+    public function update(Request $request, Setoran $setoran): JsonResponse
+    {
+        $validated = $request->validate($this->rules());
+
+        // Harus berhak atas data yang lama sekaligus siswa tujuan.
+        if (! $this->canManage($request, $setoran->santri) || ! $this->canManage($request, Santri::findOrFail($validated['santri_id']))) {
+            return $this->forbidden();
+        }
+
+        $setoran->update([
+            'santri_id' => $validated['santri_id'],
+            'juz'       => $validated['juz'],
+            'baris'     => $validated['baris'],
+            'tanggal'   => $validated['tanggal'] ?? $setoran->tanggal,
+        ]);
+
+        return $this->item(new SetoranResource($setoran->load('santri.kelas')));
+    }
+
+    public function destroy(Request $request, Setoran $setoran): JsonResponse|Response
+    {
+        if (! $this->canManage($request, $setoran->santri)) {
+            return $this->forbidden();
+        }
+
+        $setoran->delete();
+
+        return response()->noContent();
     }
 
     /**
-     * Display the specified resource.
+     * @return array<string, mixed>
      */
-    public function show(string $id): JsonResponse
+    private function rules(): array
     {
-        try {
-            $setoran = Setoran::findOrFail($id);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Berhasil mengambil detail setoran',
-                'data'    => $setoran
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data setoran tidak ditemukan'
-            ], 404);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Terjadi kesalahan sistem: ' . $e->getMessage()
-            ], 500);
-        }
+        return [
+            'santri_id' => ['required', 'integer', Rule::exists('santris', 'id')->whereNull('deleted_at')],
+            'juz'       => 'required|integer|between:1,30',
+            'baris'     => 'required|integer|min:1',
+            'tanggal'   => 'nullable|date_format:Y-m-d',
+        ];
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id): JsonResponse
+    /** Admin boleh semua siswa; guru_halaqah hanya siswa yang ia ampu. */
+    private function canManage(Request $request, ?Santri $santri): bool
     {
-        try {
-            $setoran = Setoran::findOrFail($id);
+        $user = $request->user('api');
 
-            $validated = $request->validate([
-                'baris'     => 'required|integer|min:1',
-                'santri_id' => 'required|integer|exists:santris,id',
-            ], [
-                'baris.required'     => 'Jumlah baris setoran wajib diisi!',
-                'baris.integer'      => 'Baris harus berupa angka!',
-                'baris.min'          => 'Jumlah baris setoran minimal 1!',
-                'santri_id.required' => 'Santri wajib dipilih!',
-                'santri_id.integer'  => 'Format ID Santri tidak valid!',
-                'santri_id.exists'   => 'Data santri tidak ditemukan di sistem.',
-            ]);
-
-            $setoran->update($validated);
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data setoran berhasil diperbarui',
-                'data'    => $setoran->fresh()
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data setoran tidak ditemukan'
-            ], 404);
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            throw $e;
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal memperbarui data setoran: ' . $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id): JsonResponse
-    {
-        try {
-            $setoran = Setoran::findOrFail($id);
-            $setoran->delete();
-
-            return response()->json([
-                'status'  => 'success',
-                'message' => 'Data setoran berhasil dihapus'
-            ], 200);
-        } catch (ModelNotFoundException $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Data setoran yang akan dihapus tidak ditemukan'
-            ], 404);
-        } catch (Throwable $e) {
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Gagal menghapus data setoran: ' . $e->getMessage()
-            ], 500);
-        }
+        return $user->role !== 'guru_halaqah' || ($santri !== null && $santri->isTaughtBy($user));
     }
 }

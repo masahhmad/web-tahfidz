@@ -4,7 +4,9 @@ import { useState, type FormEvent } from "react";
 import { NavIcon, icons } from "../../_components/icons";
 import { useModalA11y } from "../../_components/useModalA11y";
 
-export const ROLE_OPTIONS = ["Admin", "Guru Pengampu", "Wali Kelas"];
+// Role yang bisa dibuat lewat UI (backend: admin, guru_halaqah). super_admin hanya dari seeder.
+export const ROLE_OPTIONS = ["Admin", "Guru Pengampu"];
+export const KATEGORI_OPTIONS = ["Ikhwan", "Akhwat"];
 
 const fieldLabel = "text-[12px] leading-4 font-semibold tracking-[0.6px] text-muted";
 const fieldControl =
@@ -21,6 +23,8 @@ export function AddPenggunaModal({ isOpen, onClose }: { isOpen: boolean; onClose
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("");
+  const [kategori, setKategori] = useState("");
+  const [password, setPassword] = useState("");
 
   if (!isOpen) return null;
 
@@ -70,6 +74,20 @@ export function AddPenggunaModal({ isOpen, onClose }: { isOpen: boolean; onClose
           </label>
 
           <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>Kata Sandi</span>
+            <input
+              type="password"
+              required
+              minLength={8}
+              autoComplete="new-password"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              placeholder="Minimal 8 karakter"
+              className={fieldControl}
+            />
+          </label>
+
+          <label className="flex flex-col gap-1.5">
             <span className={fieldLabel}>Role</span>
             <div className="relative">
               <select
@@ -81,6 +99,30 @@ export function AddPenggunaModal({ isOpen, onClose }: { isOpen: boolean; onClose
                   Role
                 </option>
                 {ROLE_OPTIONS.map((value) => (
+                  <option key={value} value={value} className="text-ink">
+                    {value}
+                  </option>
+                ))}
+              </select>
+              <NavIcon className="pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-icon">
+                {icons.chevronDown}
+              </NavIcon>
+            </div>
+          </label>
+
+          <label className="flex flex-col gap-1.5">
+            <span className={fieldLabel}>Kategori</span>
+            <div className="relative">
+              <select
+                value={kategori}
+                required
+                onChange={(event) => setKategori(event.target.value)}
+                className={`${fieldControl} appearance-none pr-10 ${kategori === "" ? "text-soft" : ""}`}
+              >
+                <option value="" disabled>
+                  Kategori
+                </option>
+                {KATEGORI_OPTIONS.map((value) => (
                   <option key={value} value={value} className="text-ink">
                     {value}
                   </option>

@@ -47,9 +47,21 @@ class User extends Authenticatable implements JWTSubject
     protected function casts(): array
     {
         return [
-            'email_verified_at' => 'datetime',
-            'password' => 'hashed',
+            'email_verified_at'   => 'datetime',
+            'password'            => 'hashed',
+            'is_active'           => 'boolean',
+            'password_changed_at' => 'datetime',
         ];
+    }
+
+    public function getRoleLabelAttribute(): string
+    {
+        return match ($this->role) {
+            'super_admin'  => 'Super Admin',
+            'admin'        => 'Admin',
+            'guru_halaqah' => 'Guru Pengampu',
+            default        => (string) $this->role,
+        };
     }
 
     public function santri()
