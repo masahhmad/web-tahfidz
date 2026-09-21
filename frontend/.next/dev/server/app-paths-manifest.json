@@ -1,0 +1,6 @@
+{
+  "/dashboard/page": "app/dashboard/page.js",
+  "/dashboard/presensi-guru/page": "app/dashboard/presensi-guru/page.js",
+  "/dashboard/presensi-siswa/page": "app/dashboard/presensi-siswa/page.js",
+  "/page": "app/page.js"
+}

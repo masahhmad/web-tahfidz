@@ -1,0 +1,129 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/dashboard",
+      "regex": "^/dashboard(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard(?:/)?$"
+    },
+    {
+      "page": "/dashboard/data-siswa",
+      "regex": "^/dashboard/data\\-siswa(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/data\\-siswa(?:/)?$"
+    },
+    {
+      "page": "/dashboard/halaqah",
+      "regex": "^/dashboard/halaqah(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/halaqah(?:/)?$"
+    },
+    {
+      "page": "/dashboard/kenaikan-juz",
+      "regex": "^/dashboard/kenaikan\\-juz(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/kenaikan\\-juz(?:/)?$"
+    },
+    {
+      "page": "/dashboard/pengaturan",
+      "regex": "^/dashboard/pengaturan(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/pengaturan(?:/)?$"
+    },
+    {
+      "page": "/dashboard/pengguna",
+      "regex": "^/dashboard/pengguna(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/pengguna(?:/)?$"
+    },
+    {
+      "page": "/dashboard/presensi-guru",
+      "regex": "^/dashboard/presensi\\-guru(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/presensi\\-guru(?:/)?$"
+    },
+    {
+      "page": "/dashboard/presensi-siswa",
+      "regex": "^/dashboard/presensi\\-siswa(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/presensi\\-siswa(?:/)?$"
+    },
+    {
+      "page": "/dashboard/setoran",
+      "regex": "^/dashboard/setoran(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/setoran(?:/)?$"
+    },
+    {
+      "page": "/dashboard/target",
+      "regex": "^/dashboard/target(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/dashboard/target(?:/)?$"
+    },
+    {
+      "page": "/favicon.ico",
+      "regex": "^/favicon\\.ico(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/favicon\\.ico(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

@@ -1,0 +1,14 @@
+{
+  "pages": {},
+  "app": {
+    "[project]/app/dashboard/pengaturan/page": [
+      "static/media/a218039a3287bcfd-s.p.43zbiuwnnoiok.woff2",
+      "static/media/8e6fa89aa22d24ec-s.p.2o7m9ogm38dql.woff2",
+      "static/media/e2334d715941921e-s.p.3o_v2fun1jzxk.woff2",
+      "static/media/47fe1b7cd6e6ed85-s.p.3bh2vc0w-r-ll.woff2",
+      "static/media/797e433ab948586e-s.p.0r6juujl39pe6.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pagesUsingSizeAdjust": false
+}

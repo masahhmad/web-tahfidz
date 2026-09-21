@@ -1,0 +1,16 @@
+{
+  "/_global-error/page": "/_global-error",
+  "/_not-found/page": "/_not-found",
+  "/dashboard/data-siswa/page": "/dashboard/data-siswa",
+  "/dashboard/halaqah/page": "/dashboard/halaqah",
+  "/dashboard/kenaikan-juz/page": "/dashboard/kenaikan-juz",
+  "/dashboard/page": "/dashboard",
+  "/dashboard/pengaturan/page": "/dashboard/pengaturan",
+  "/dashboard/pengguna/page": "/dashboard/pengguna",
+  "/dashboard/presensi-guru/page": "/dashboard/presensi-guru",
+  "/dashboard/presensi-siswa/page": "/dashboard/presensi-siswa",
+  "/dashboard/setoran/page": "/dashboard/setoran",
+  "/dashboard/target/page": "/dashboard/target",
+  "/favicon.ico/route": "/favicon.ico",
+  "/page": "/"
+}
