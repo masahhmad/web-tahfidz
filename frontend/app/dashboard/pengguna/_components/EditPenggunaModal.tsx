@@ -4,20 +4,28 @@ import { useState, type FormEvent } from "react";
 import { createPortal } from "react-dom";
 import { NavIcon, icons } from "../../_components/icons";
 import { useModalA11y } from "../../_components/useModalA11y";
+import { isValidPhone, normalizePhone, PHONE_FORMAT_ERROR, PHONE_REQUIRED_ERROR } from "../../_lib/phone";
 import { ROLE_OPTIONS } from "./AddPenggunaModal";
 
 const fieldLabel = "text-[12px] leading-4 font-semibold tracking-[0.6px] text-muted";
 const fieldControl =
   "w-full rounded-lg border border-line bg-field px-[13px] py-[9px] text-[14px] leading-5 text-ink outline-none placeholder:text-soft";
 
-export type PenggunaEdit = { name: string; email: string; role: string };
+// A super admin's role can never be changed (the backend rejects it), and it is not a role the UI can assign.
+export const SUPER_ADMIN_LABEL = "Super Admin";
+
+/** `telp` is only part of the form (and the result) when `showPhone` is on. */
+export type PenggunaEdit = { name: string; email: string; role: string; telp?: string };
 
 /* -------------------------------------------------------------------------
  * EditPenggunaModal — popup opened from a row's pencil button to change the
  * user's name, email, and role. Passwords are handled separately by
  * ResetPasswordModal (key button). Pass roleEditable={false} where the user
  * may not change their own role (Pengaturan): the role select is then shown
- * disabled. Rendered through a portal since it's
+ * disabled — it is also locked for a super admin row. Pass showPhone on
+ * Pengaturan only (the Pengguna page has no phone field); the number is
+ * normalised to 08xxxxxxxxxx and validated before saving, and
+ * phoneRequired makes it mandatory (admin / super admin). Rendered through a portal since it's
  * opened from inside a <tr>/<td>, where a fixed overlay would be hoisted out
  * of the table and cause a hydration mismatch.
  * ---------------------------------------------------------------------- */
@@ -26,24 +34,48 @@ export function EditPenggunaModal({
   onClose,
   initial,
   roleEditable = true,
+  showPhone = false,
+  phoneRequired = false,
   onSave,
 }: {
   isOpen: boolean;
   onClose: () => void;
   initial: PenggunaEdit;
   roleEditable?: boolean;
+  showPhone?: boolean;
+  phoneRequired?: boolean;
   onSave: (next: PenggunaEdit) => void;
 }) {
   const panelRef = useModalA11y(isOpen, onClose);
   const [name, setName] = useState(initial.name);
   const [email, setEmail] = useState(initial.email);
   const [role, setRole] = useState(initial.role);
+  const [telp, setTelp] = useState(initial.telp ?? "");
+  const [telpError, setTelpError] = useState<string | null>(null);
 
   if (!isOpen || typeof document === "undefined") return null;
 
+  const roleLocked = !roleEditable || initial.role === SUPER_ADMIN_LABEL;
+  const roleOptions = ROLE_OPTIONS.includes(role) ? ROLE_OPTIONS : [role, ...ROLE_OPTIONS];
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onSave({ name: name.trim(), email: email.trim(), role });
+    const next: PenggunaEdit = { name: name.trim(), email: email.trim(), role };
+
+    if (showPhone) {
+      const normalized = normalizePhone(telp);
+      if (normalized === "" && phoneRequired) {
+        setTelpError(PHONE_REQUIRED_ERROR);
+        return;
+      }
+      if (normalized !== "" && !isValidPhone(normalized)) {
+        setTelpError(PHONE_FORMAT_ERROR);
+        return;
+      }
+      next.telp = normalized;
+    }
+
+    onSave(next);
   }
 
   return createPortal(
@@ -94,10 +126,10 @@ export function EditPenggunaModal({
               <select
                 value={role}
                 onChange={(event) => setRole(event.target.value)}
-                disabled={!roleEditable}
+                disabled={roleLocked}
                 className={`${fieldControl} appearance-none pr-10 disabled:cursor-not-allowed disabled:bg-hover-soft disabled:text-soft`}
               >
-                {ROLE_OPTIONS.map((value) => (
+                {roleOptions.map((value) => (
                   <option key={value} value={value}>
                     {value}
                   </option>
@@ -108,6 +140,36 @@ export function EditPenggunaModal({
               </NavIcon>
             </div>
           </label>
+
+          {showPhone && (
+            <label className="flex flex-col gap-1.5">
+              <span className={fieldLabel}>Nomor Telepon</span>
+              <input
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel"
+                aria-required={phoneRequired}
+                aria-invalid={telpError !== null}
+                aria-describedby="edit-pengguna-telp-hint"
+                value={telp}
+                onChange={(event) => {
+                  setTelp(event.target.value);
+                  setTelpError(null);
+                }}
+                placeholder="08xxxxxxxxxx"
+                className={`${fieldControl} ${telpError ? "border-danger" : ""}`}
+              />
+              {telpError ? (
+                <span id="edit-pengguna-telp-hint" role="alert" className="text-[12px] leading-4 text-danger">
+                  {telpError}
+                </span>
+              ) : (
+                <span id="edit-pengguna-telp-hint" className="text-[12px] leading-4 text-soft">
+                  {phoneRequired ? "Wajib diisi. " : ""}Contoh: 0821-4298-6689
+                </span>
+              )}
+            </label>
+          )}
 
           <div className="grid grid-cols-2 gap-2 pt-1">
             <button

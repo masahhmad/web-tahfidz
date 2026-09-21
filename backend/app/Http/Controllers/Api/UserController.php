@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
 use App\Models\User;
+use App\Support\Telp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -40,16 +41,21 @@ class UserController extends Controller
         $validated = $request->validate([
             'nama'     => 'required|string|min:3|max:255',
             'email'    => 'required|email|unique:users,email',
+            // Form Tambah Pengguna tidak mengirim telp; admin/super_admin mengisinya sendiri di Pengaturan
+            // (sampai itu terisi, frontend mencegat akses — lihat `perlu_lengkapi_telp` di /me).
+            'telp'     => ['nullable', 'string', 'regex:'.Telp::PATTERN],
             'role'     => ['required', Rule::in(['admin', 'guru_halaqah'])],
             'kategori' => ['required', Rule::in(['ikh', 'akh'])],
             'password' => 'required|string|min:8',
         ], [
             'email.unique' => 'Email sudah digunakan.',
+            'telp.regex'   => Telp::MESSAGE,
         ]);
 
         $user = User::create([
             'username' => $validated['nama'],
             'email'    => $validated['email'],
+            'telp'     => $validated['telp'] ?? null,
             'role'     => $validated['role'],
             'category' => $validated['kategori'],
             'password' => $validated['password'],
@@ -68,11 +74,19 @@ class UserController extends Controller
         $validated = $request->validate([
             'nama'     => 'required|string|min:3|max:255',
             'email'    => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            // Tidak dikirim = tidak berubah. Bila dikirim harus valid, dan admin/super_admin
+            // tidak boleh mengosongkannya (akan terkunci di frontend).
+            'telp'     => [
+                Rule::requiredIf(in_array($request->input('role'), ['admin', 'super_admin'], true) && $request->has('telp')),
+                'nullable', 'string', 'regex:'.Telp::PATTERN,
+            ],
             // super_admin hanya boleh tetap super_admin, supaya tidak ada yang terkunci keluar.
             'role'     => ['required', Rule::in($user->role === 'super_admin' ? ['super_admin'] : ['admin', 'guru_halaqah'])],
             'password' => 'prohibited',
         ], [
             'email.unique'        => 'Email sudah digunakan.',
+            'telp.required'       => 'Nomor telepon tidak boleh dikosongkan untuk admin.',
+            'telp.regex'          => Telp::MESSAGE,
             'password.prohibited' => 'Gunakan endpoint ganti password untuk mengubah password.',
         ]);
 
@@ -80,7 +94,7 @@ class UserController extends Controller
             'username' => $validated['nama'],
             'email'    => $validated['email'],
             'role'     => $validated['role'],
-        ]);
+        ] + (array_key_exists('telp', $validated) ? ['telp' => $validated['telp']] : []));
 
         return $this->item(new UserResource($user));
     }

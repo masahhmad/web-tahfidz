@@ -11,7 +11,7 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use PHPOpenSourceSaver\JWTAuth\Contracts\JWTSubject;
 
-#[Fillable(['username', 'email', 'password', 'category', 'role'])]
+#[Fillable(['username', 'email', 'telp', 'password', 'category', 'role'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable implements JWTSubject
 {
@@ -52,6 +52,17 @@ class User extends Authenticatable implements JWTSubject
             'is_active'           => 'boolean',
             'password_changed_at' => 'datetime',
         ];
+    }
+
+    /** Role yang kontaknya dipakai menu Bantuan, sehingga wajib punya nomor telepon. */
+    public static function wajibTelp(string $role): bool
+    {
+        return in_array($role, ['admin', 'super_admin'], true);
+    }
+
+    public function perluLengkapiTelp(): bool
+    {
+        return self::wajibTelp($this->role) && ! $this->telp;
     }
 
     public function getRoleLabelAttribute(): string

@@ -1,5 +1,8 @@
+"use client";
+
 import { NavIcon, icons } from "../../_components/icons";
 import { PaginationFooter } from "../../_components/PaginationFooter";
+import { useCanManageMasterData } from "../../_components/session";
 
 export type SiswaRecord = {
   no: number;
@@ -19,15 +22,19 @@ const RECORDS: SiswaRecord[] = [
  * DataSiswaTable — semantic <table> so screen readers get real row/column
  * relationships; wrapped in its own overflow-x-auto so the wide table
  * scrolls horizontally on mobile/tablet instead of squeezing columns.
+ * The Aksi column (edit / delete) is not shown to a read-only super admin.
  * ---------------------------------------------------------------------- */
 export function DataSiswaTable() {
+  const canManage = useCanManageMasterData();
+  const columns = canManage ? COLUMNS : COLUMNS.filter((label) => label !== "Aksi");
+
   return (
     <div className="w-full overflow-hidden rounded-xl border border-card-edge bg-card shadow-[0px_4px_20px_0px_rgba(0,0,0,0.03)]">
       <div className="w-full overflow-x-auto">
         <table className="w-full min-w-[880px] border-collapse text-center">
           <thead className="bg-card/50">
             <tr>
-              {COLUMNS.map((label, index) => (
+              {columns.map((label, index) => (
                 <th
                   key={label}
                   scope="col"
@@ -59,24 +66,26 @@ export function DataSiswaTable() {
                     <NavIcon size={14}>{icons.externalLink}</NavIcon>
                   </button>
                 </td>
-                <td className="px-6 py-2.5">
-                  <div className="flex items-center justify-center gap-2">
-                    <button
-                      type="button"
-                      aria-label={`Ubah data ${record.name}`}
-                      className="inline-flex items-center justify-center rounded-md p-1.5 text-muted hover:bg-hover"
-                    >
-                      <NavIcon>{icons.edit}</NavIcon>
-                    </button>
-                    <button
-                      type="button"
-                      aria-label={`Hapus data ${record.name}`}
-                      className="inline-flex items-center justify-center rounded-md p-1.5 text-muted hover:bg-hover"
-                    >
-                      <NavIcon>{icons.trash}</NavIcon>
-                    </button>
-                  </div>
-                </td>
+                {canManage && (
+                  <td className="px-6 py-2.5">
+                    <div className="flex items-center justify-center gap-2">
+                      <button
+                        type="button"
+                        aria-label={`Ubah data ${record.name}`}
+                        className="inline-flex items-center justify-center rounded-md p-1.5 text-muted hover:bg-hover"
+                      >
+                        <NavIcon>{icons.edit}</NavIcon>
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Hapus data ${record.name}`}
+                        className="inline-flex items-center justify-center rounded-md p-1.5 text-muted hover:bg-hover"
+                      >
+                        <NavIcon>{icons.trash}</NavIcon>
+                      </button>
+                    </div>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

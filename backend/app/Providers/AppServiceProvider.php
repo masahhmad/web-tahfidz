@@ -27,6 +27,9 @@ class AppServiceProvider extends ServiceProvider
             return Limit::perMinute(5)->by(strtolower((string) $request->input('email')).'|'.$request->ip());
         });
 
+        // Endpoint publik tanpa token: 30/menit per IP.
+        RateLimiter::for('public', fn (Request $request) => Limit::perMinute(30)->by($request->ip()));
+
         // Endpoint lain: 60/menit per user (fallback ke IP bila token tidak valid).
         RateLimiter::for('api', function (Request $request) {
             return Limit::perMinute(60)->by($request->user('api')?->getKey() ?: $request->ip());

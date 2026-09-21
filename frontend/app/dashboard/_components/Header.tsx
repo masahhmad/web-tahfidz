@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { NavIcon, icons } from "./icons";
 import { ThemeToggle } from "./ThemeToggle";
+import { useSession } from "./session";
 
 /* -------------------------------------------------------------------------
  * HeaderToggle — hamburger / close button, only rendered below lg.
@@ -45,14 +46,25 @@ function HeaderActionButton({
   );
 }
 
+function getInitials(name: string): string {
+  return name
+    .split(/\s+/)
+    .filter(Boolean)
+    .slice(0, 2)
+    .map((word) => word[0].toUpperCase())
+    .join("");
+}
+
 function HeaderProfile() {
+  const { user } = useSession();
+
   return (
     <button
       type="button"
-      aria-label="Open profile menu"
+      aria-label={`Open profile menu, ${user.nama}`}
       className="flex size-10 shrink-0 items-center justify-center rounded-full border-2 border-card-edge bg-mint text-[12px] font-semibold text-on-mint"
     >
-      TS
+      {getInitials(user.nama)}
     </button>
   );
 }

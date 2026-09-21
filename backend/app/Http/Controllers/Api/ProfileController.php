@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Http\Resources\UserResource;
+use App\Models\User;
+use App\Support\Telp;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -22,17 +24,21 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'nama'  => 'required|string|min:3|max:255',
             'email' => ['required', 'email', Rule::unique('users', 'email')->ignore($user->id)],
+            // Tidak dikirim = tidak berubah. Admin & super_admin tidak boleh mengosongkannya.
+            'telp'  => [Rule::requiredIf(User::wajibTelp($user->role) && $request->has('telp')), 'nullable', 'string', 'regex:'.Telp::PATTERN],
             // Role tidak boleh diubah lewat profil sendiri.
             'role'  => 'prohibited',
         ], [
             'email.unique'    => 'Email sudah digunakan.',
+            'telp.required'   => 'Nomor telepon tidak boleh dikosongkan.',
+            'telp.regex'      => Telp::MESSAGE,
             'role.prohibited' => 'Role tidak dapat diubah.',
         ]);
 
         $user->update([
             'username' => $validated['nama'],
             'email'    => $validated['email'],
-        ]);
+        ] + (array_key_exists('telp', $validated) ? ['telp' => $validated['telp']] : []));
 
         return $this->profile($request);
     }

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { NavIcon, icons } from "../../../dashboard/_components/icons";
+import { ForgotPasswordLink } from "./ContactLinks";
 
 const label = "text-[12px] leading-4 font-semibold tracking-[0.6px] text-muted uppercase";
 const control =
@@ -50,9 +51,7 @@ export function LoginForm() {
           <label htmlFor="password" className={label}>
             Password
           </label>
-          <a href="#" className="text-[12px] leading-4 font-medium text-on-mint hover:underline">
-            Lupa Sandi?
-          </a>
+          <ForgotPasswordLink className="text-[12px] leading-4 font-medium text-on-mint hover:underline" />
         </div>
         <div className="relative">
           <NavIcon size={16} className="pointer-events-none absolute top-1/2 left-3.5 -translate-y-1/2 text-icon">

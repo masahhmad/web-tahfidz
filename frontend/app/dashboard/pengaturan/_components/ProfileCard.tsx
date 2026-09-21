@@ -1,29 +1,47 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { EditPenggunaModal, type PenggunaEdit } from "../../pengguna/_components/EditPenggunaModal";
 import { ResetPasswordModal } from "../../pengguna/_components/ResetPasswordModal";
+import { requiresPhone, useSession } from "../../_components/session";
 
 /* -------------------------------------------------------------------------
  * ProfileCard — the logged-in user's profile summary: avatar (a generic
  * placeholder silhouette until a real photo is wired to the profile API),
- * name, email, role, halaqah count, and the Edit Pengguna / Ganti Password
- * actions, which open the same EditPenggunaModal / ResetPasswordModal used
- * on the Pengguna page. Centered card, buttons stack full-width on mobile and sit side
- * by side from sm up.
+ * name, email, role, phone number (admin / super admin only), halaqah count (guru pengampu only), and
+ * the Edit Pengguna / Ganti Password actions, which open the same
+ * EditPenggunaModal / ResetPasswordModal used on the Pengguna page. Saving
+ * the phone number here is what lifts the dashboard's phone-number gate.
+ * Centered card, buttons stack full-width on mobile and sit side by side
+ * from sm up.
  * ---------------------------------------------------------------------- */
 export function ProfileCard() {
-  const [profile, setProfile] = useState<PenggunaEdit>({
-    name: "Muhammad Zaid Burhanuddin",
-    email: "zaidburhan@gmail.com",
-    role: "Guru Pengampu",
-  });
+  const { user, updateUser } = useSession();
   const [isEditing, setIsEditing] = useState(false);
   const [isResetting, setIsResetting] = useState(false);
+  const [notice, setNotice] = useState<string | null>(null);
+
+  // Only admin / super admin have a phone number (and must fill it in); other
+  // roles keep it null and never see the field. It becomes mandatory for a user
+  // as soon as their role is changed to admin.
+  const hasPhone = requiresPhone(user.role);
+
+  useEffect(() => {
+    if (!notice) return;
+    const timer = setTimeout(() => setNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [notice]);
 
   function handleSaveEdit(next: PenggunaEdit) {
-    setProfile(next);
+    updateUser({ nama: next.name, email: next.email, ...(hasPhone ? { telp: next.telp || null } : {}) });
     setIsEditing(false);
+    setNotice("Profil berhasil disimpan.");
+  }
+
+  function handleSavePassword() {
+    // Placeholder until the backend exists; the password is not stored client-side.
+    setIsResetting(false);
+    setNotice("Kata sandi berhasil diganti.");
   }
 
   return (
@@ -36,11 +54,25 @@ export function ProfileCard() {
       </div>
 
       <div className="flex flex-col items-center gap-1.5">
-        <p className="text-[16px] leading-6 font-medium text-ink">{profile.name}</p>
-        <p className="text-[16px] leading-6 text-muted">{profile.email}</p>
-        <p className="text-[16px] leading-6 text-muted">{profile.role}</p>
-        <p className="text-[16px] leading-6 text-muted">Mengampu 16 siswa</p>
+        <p className="text-[16px] leading-6 font-medium text-ink">{user.nama}</p>
+        <p className="text-[16px] leading-6 text-muted">{user.email}</p>
+        <p className="text-[16px] leading-6 text-muted">{user.role_label}</p>
+        {hasPhone &&
+          (user.telp ? (
+            <p className="text-[16px] leading-6 text-muted">{user.telp}</p>
+          ) : (
+            <p className="text-[16px] leading-6 font-medium text-danger">Nomor telepon belum diisi</p>
+          ))}
+        {user.role === "guru_halaqah" && (
+          <p className="text-[16px] leading-6 text-muted">Mengampu {user.jumlah_siswa} siswa</p>
+        )}
       </div>
+
+      {notice && (
+        <p role="status" className="rounded-lg bg-mint px-4 py-2 text-[14px] leading-5 font-medium text-on-mint">
+          {notice}
+        </p>
+      )}
 
       <div className="flex w-full flex-col gap-2 pt-1 sm:w-auto sm:flex-row">
         <button
@@ -63,8 +95,10 @@ export function ProfileCard() {
         <EditPenggunaModal
           isOpen
           onClose={() => setIsEditing(false)}
-          initial={profile}
+          initial={{ name: user.nama, email: user.email, role: user.role_label, telp: user.telp ?? "" }}
           roleEditable={false}
+          showPhone={hasPhone}
+          phoneRequired={hasPhone}
           onSave={handleSaveEdit}
         />
       )}
@@ -72,10 +106,9 @@ export function ProfileCard() {
         <ResetPasswordModal
           isOpen
           onClose={() => setIsResetting(false)}
-          userName={profile.name}
+          userName={user.nama}
           requireCurrent
-          // Placeholder until the backend exists; the password is not stored client-side.
-          onSave={() => setIsResetting(false)}
+          onSave={handleSavePassword}
         />
       )}
     </div>

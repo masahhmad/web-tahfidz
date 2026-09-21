@@ -1,11 +1,22 @@
 import type { Metadata } from "next";
 import { LoginForm } from "./_components/LoginForm";
+import { HelpFooterLink } from "./_components/ContactLinks";
 
 export const metadata: Metadata = {
   title: "Masuk | Tahfidz System",
 };
 
-export default function LoginPage() {
+// Shown above the form when the user was sent back here (…/login?reason=expired).
+const REASON_MESSAGES: Record<string, string> = {
+  expired: "Sesi Anda telah berakhir, silakan masuk kembali.",
+  disabled: "Akun Anda dinonaktifkan.",
+};
+
+export default async function LoginPage({ searchParams }: { searchParams: Promise<{ reason?: string | string[] }> }) {
+  const { reason } = await searchParams;
+  const reasonKey = Array.isArray(reason) ? reason[0] : reason;
+  const reasonMessage = reasonKey ? REASON_MESSAGES[reasonKey] : undefined;
+
   return (
     <section
       aria-labelledby="login-title"
@@ -20,12 +31,16 @@ export default function LoginPage() {
         </p>
       </div>
 
+      {reasonMessage && (
+        <p role="alert" className="rounded-xl bg-bad px-4 py-3 text-center text-[14px] leading-5 font-medium text-on-bad">
+          {reasonMessage}
+        </p>
+      )}
+
       <LoginForm />
 
       <p className="text-right text-[11px] leading-[16.5px] text-muted">
-        <a href="#" className="underline decoration-dotted underline-offset-2 hover:text-ink">
-          Butuh Bantuan? Hubungi Super Admin
-        </a>
+        <HelpFooterLink className="underline decoration-dotted underline-offset-2 hover:text-ink" />
       </p>
     </section>
   );

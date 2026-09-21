@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\Api\AuthController;
+use App\Http\Controllers\Api\BantuanController;
 use App\Http\Controllers\Api\DashboardController;
 use App\Http\Controllers\Api\HalaqahController;
 use App\Http\Controllers\Api\KelasController;
@@ -23,6 +24,8 @@ use Illuminate\Support\Facades\Route;
 */
 
 Route::post('/login', [AuthController::class, 'login'])->middleware('throttle:login');
+// Halaman login butuh kontak super admin sebelum ada token.
+Route::get('/bantuan/publik', [BantuanController::class, 'publik'])->middleware('throttle:public');
 
 Route::middleware(['throttle:api', 'auth:api', 'active'])->group(function () {
 
@@ -33,6 +36,7 @@ Route::middleware(['throttle:api', 'auth:api', 'active'])->group(function () {
     Route::put('/me', [ProfileController::class, 'update']);
     Route::put('/me/password', [ProfileController::class, 'updatePassword']);
     Route::get('/dashboard/summary', DashboardController::class);
+    Route::get('/bantuan', [BantuanController::class, 'index']);
 
     Route::prefix('lookup')->group(function () {
         Route::get('/kelas', [LookupController::class, 'kelas']);

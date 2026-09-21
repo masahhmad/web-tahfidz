@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { NavIcon, icons } from "../../_components/icons";
 import { PaginationFooter } from "../../_components/PaginationFooter";
-import { EditPenggunaModal, type PenggunaEdit } from "./EditPenggunaModal";
+import { EditPenggunaModal, SUPER_ADMIN_LABEL, type PenggunaEdit } from "./EditPenggunaModal";
 import { ResetPasswordModal } from "./ResetPasswordModal";
 import { ToggleActiveModal } from "./ToggleActiveModal";
 
@@ -13,12 +13,22 @@ export type PenggunaRecord = {
   email: string;
   role: string;
   isActive: boolean;
+  /** Admin / super admin who has not filled in a phone number yet (still locked out). */
+  needsPhone?: boolean;
 };
 
 const COLUMNS = ["No", "Nama", "Email", "Role", "Aksi"] as const;
 
 const INITIAL_RECORDS: PenggunaRecord[] = [
   { no: 1, name: "Ahmad Rasyid", email: "ahmadrasyid@gmail.com", role: "Guru Pengampu", isActive: true },
+  {
+    no: 2,
+    name: "Muhammad Zaid Burhanuddin",
+    email: "zaidburhan@gmail.com",
+    role: SUPER_ADMIN_LABEL,
+    isActive: true,
+    needsPhone: true,
+  },
 ];
 
 /* -------------------------------------------------------------------------
@@ -81,7 +91,14 @@ export function PenggunaTable() {
               <tr key={record.no} className="border-b border-divider last:border-b-0">
                 <td className="px-6 py-2.5 text-left text-[14px] leading-5 text-muted">{record.no}</td>
                 <td className="px-6 py-2.5 text-[14px] leading-5 font-semibold text-ink whitespace-nowrap">
-                  {record.name}
+                  <div className="flex flex-col items-center gap-1">
+                    {record.name}
+                    {record.needsPhone && (
+                      <span className="rounded-full bg-warn px-2 py-0.5 text-[11px] leading-4 font-semibold text-on-warn">
+                        Belum isi telp
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-2.5 text-[14px] leading-5 text-muted whitespace-nowrap">{record.email}</td>
                 <td className="px-6 py-2.5 text-[14px] leading-5 text-muted whitespace-nowrap">{record.role}</td>
