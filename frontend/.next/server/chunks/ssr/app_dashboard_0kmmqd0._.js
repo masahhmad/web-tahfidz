@@ -1,3 +1,0 @@
-module.exports=[53833,a=>{"use strict";a.s(["DashboardShell",()=>b]);let b=(0,a.i(11857).registerClientReference)(function(){throw Error("Attempted to call DashboardShell() from the server but DashboardShell is on the client. It's not possible to invoke a client function from the server, it can only be rendered as a Component or passed to props of a Client Component.")},"[project]/app/dashboard/_components/DashboardShell.tsx","DashboardShell")},72871,a=>{"use strict";var b=a.i(53833);a.n(b)},46927,a=>{"use strict";var b=a.i(7997),c=a.i(72871);a.s(["default",0,function({children:a}){return(0,b.jsx)(c.DashboardShell,{children:a})}])},22882,function(a){a.n(a.i(46927))}];
-
-//# sourceMappingURL=app_dashboard_0kmmqd0._.js.map
