@@ -21,7 +21,7 @@ export function DashboardShell({ children }: { children: ReactNode }) {
   const activeId = pathname.split("/").filter(Boolean).pop() ?? "dashboard";
 
   return (
-    <div className="flex h-dvh w-full items-start overflow-hidden bg-[#f8f9fa]">
+    <div className="flex h-dvh w-full items-start overflow-hidden bg-page">
       <DesktopSidebar activeId={activeId} />
       <MobileDrawer isOpen={isDrawerOpen} onClose={() => setIsDrawerOpen(false)} activeId={activeId} />
 

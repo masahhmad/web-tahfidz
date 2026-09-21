@@ -1,12 +1,15 @@
 "use client";
 
 import { useEffect, useRef } from "react";
+import Link from "next/link";
 import { NavIcon, icons } from "./icons";
 import { NAV_ITEMS, FOOTER_ITEMS, type NavItem } from "./nav-data";
 
 /* -------------------------------------------------------------------------
  * SidebarItem — one nav row, active/inactive states from Figma
- * ("Link - Dashboard (Inactive/Active)" variants).
+ * ("Link - Dashboard (Inactive/Active)" variants). Renders a real next/link
+ * when the item has a route (`href`); footer items without one yet (e.g.
+ * "Keluar", which will be a sign-out action) stay inert anchors.
  * ---------------------------------------------------------------------- */
 function SidebarItem({
   item,
@@ -17,19 +20,27 @@ function SidebarItem({
   isActive: boolean;
   onClick?: () => void;
 }) {
-  return (
-    <a
-      href="#"
-      onClick={onClick}
-      aria-current={isActive ? "page" : undefined}
-      className={`flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[14px] leading-[20px] transition-colors ${
-        isActive
-          ? "bg-[#6cf8bb] text-[#00714d]"
-          : "text-[#404944] hover:bg-[#f8f9fa]"
-      }`}
-    >
+  const className = `flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[14px] leading-[20px] transition-colors ${
+    isActive ? "bg-mint text-on-mint" : "text-muted hover:bg-hover-soft"
+  }`;
+  const content = (
+    <>
       <NavIcon size={15}>{icons[item.icon]}</NavIcon>
       {item.label}
+    </>
+  );
+
+  if (item.href) {
+    return (
+      <Link href={item.href} onClick={onClick} aria-current={isActive ? "page" : undefined} className={className}>
+        {content}
+      </Link>
+    );
+  }
+
+  return (
+    <a href="#" onClick={onClick} aria-current={isActive ? "page" : undefined} className={className}>
+      {content}
     </a>
   );
 }
@@ -48,7 +59,7 @@ function SidebarContent({
   onClose?: () => void;
 }) {
   return (
-    <div className="flex h-full w-[260px] flex-col gap-3 overflow-y-auto bg-white px-4 pt-8 pb-3 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.03)]">
+    <div className="flex h-full w-[260px] flex-col gap-3 overflow-y-auto bg-card px-4 pt-8 pb-3 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.03)]">
       {/* Header / Logo Area */}
       <div className="flex w-full flex-col items-start pb-8">
         <div className="flex w-full items-center gap-4 px-2">
@@ -58,10 +69,10 @@ function SidebarContent({
             </NavIcon>
           </div>
           <div className="flex flex-1 flex-col items-start">
-            <h1 className="text-[20px] leading-[28px] font-bold tracking-[-0.5px] text-[#003527]">
+            <h1 className="text-[20px] leading-[28px] font-bold tracking-[-0.5px] text-brand">
               Tahfidz System
             </h1>
-            <p className="text-[12px] leading-[16px] font-semibold tracking-[0.6px] text-[#404944]">
+            <p className="text-[12px] leading-[16px] font-semibold tracking-[0.6px] text-muted">
               Management Portal
             </p>
           </div>
@@ -70,7 +81,7 @@ function SidebarContent({
               type="button"
               onClick={onClose}
               aria-label="Close menu"
-              className="flex size-9 shrink-0 items-center justify-center rounded-full text-[#191c1d] hover:bg-[#edeeef] lg:hidden"
+              className="flex size-9 shrink-0 items-center justify-center rounded-full text-ink hover:bg-hover lg:hidden"
             >
               <NavIcon size={18}>{icons.close}</NavIcon>
             </button>
@@ -88,7 +99,7 @@ function SidebarContent({
       </ul>
 
       {/* Footer Links */}
-      <div className="flex w-full flex-col gap-2 border-t border-[#e1e3e4] pt-[13px]">
+      <div className="flex w-full flex-col gap-2 border-t border-line pt-[13px]">
         {FOOTER_ITEMS.map((item) => (
           <SidebarItem key={item.id} item={item} isActive={false} onClick={onNavigate} />
         ))}

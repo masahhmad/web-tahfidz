@@ -4,14 +4,18 @@ RUN apk add --no-cache \
         git \
         curl \
         unzip \
+        $PHPIZE_DEPS \
+        pkgconfig \
+        sqlite-dev \
         libzip-dev \
         oniguruma-dev \
         icu-dev \
+        icu-libs \
         libpng-dev \
         libjpeg-turbo-dev \
         freetype-dev \
     && docker-php-ext-configure gd --with-freetype --with-jpeg \
-    && docker-php-ext-install pdo pdo_mysql pdo_sqlite mbstring zip intl gd bcmath pcntl \
+    && docker-php-ext-install -j$(nproc) pdo pdo_mysql pdo_sqlite mbstring zip intl gd bcmath pcntl \
     && rm -rf /var/cache/apk/*
 
 COPY --from=composer:2 /usr/bin/composer /usr/bin/composer

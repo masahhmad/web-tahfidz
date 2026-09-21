@@ -50,18 +50,18 @@ export function AddPresensiModal({
         role="dialog"
         aria-modal="true"
         aria-labelledby="add-presensi-title"
-        className="flex max-h-[85dvh] w-full max-w-lg flex-col rounded-2xl bg-white"
+        className="flex max-h-[85dvh] w-full max-w-lg flex-col rounded-2xl bg-modal"
         onClick={(event) => event.stopPropagation()}
       >
-        <div className="flex items-center justify-between border-b border-[#e1e3e4] px-6 py-5">
-          <h2 id="add-presensi-title" className="text-[20px] leading-7 font-bold text-[#191c1d]">
+        <div className="flex items-center justify-between border-b border-line px-6 py-5">
+          <h2 id="add-presensi-title" className="text-[20px] leading-7 font-bold text-ink">
             Tambah Presensi {subjectLabel}
           </h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Tutup"
-            className="rounded p-1 text-[#404944] hover:bg-[#edeeef]"
+            className="rounded p-1 text-muted hover:bg-hover"
           >
             ✕
           </button>
@@ -71,19 +71,19 @@ export function AddPresensiModal({
           <form className="flex flex-col gap-5">
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
               <label className="flex flex-col gap-1.5">
-                <span className="text-[12px] leading-4 font-semibold tracking-[0.6px] text-[#404944]">
+                <span className="text-[12px] leading-4 font-semibold tracking-[0.6px] text-muted">
                   Tanggal &amp; Waktu
                 </span>
                 <input
                   type="datetime-local"
-                  className="rounded-lg border border-[#e1e3e4] px-[13px] py-[9px] text-[14px] leading-5 text-[#191c1d] outline-none"
+                  className="rounded-lg border border-line px-[13px] py-[9px] text-[14px] leading-5 text-ink outline-none"
                 />
               </label>
               <label className="flex flex-col gap-1.5">
-                <span className="text-[12px] leading-4 font-semibold tracking-[0.6px] text-[#404944]">Sesi</span>
+                <span className="text-[12px] leading-4 font-semibold tracking-[0.6px] text-muted">Sesi</span>
                 <select
                   defaultValue="pagi"
-                  className="rounded-lg border border-[#e1e3e4] px-[13px] py-[9px] text-[14px] leading-5 text-[#191c1d] outline-none"
+                  className="rounded-lg border border-line px-[13px] py-[9px] text-[14px] leading-5 text-ink outline-none"
                 >
                   <option value="pagi">Sesi Pagi</option>
                   <option value="siang">Sesi Siang</option>
@@ -93,22 +93,22 @@ export function AddPresensiModal({
             </div>
 
             <fieldset className="flex flex-col gap-2">
-              <legend className="text-[12px] leading-4 font-semibold tracking-[0.6px] text-[#404944]">
+              <legend className="text-[12px] leading-4 font-semibold tracking-[0.6px] text-muted">
                 Daftar {subjectLabel}
               </legend>
-              <ul className="flex flex-col rounded-xl border border-[#e1e3e4]">
+              <ul className="flex flex-col rounded-xl border border-line">
                 {subjects.map((subject, index) => (
                   <li
                     key={subject.id}
                     className={`flex flex-col gap-3 px-4 py-3 ${
-                      index !== subjects.length - 1 ? "border-b border-[#eff0f1]" : ""
+                      index !== subjects.length - 1 ? "border-b border-divider" : ""
                     }`}
                   >
                     <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                       <div className="min-w-0">
-                        <p className="truncate text-[14px] leading-5 font-medium text-[#191c1d]">{subject.name}</p>
+                        <p className="truncate text-[14px] leading-5 font-medium text-ink">{subject.name}</p>
                         {subject.meta && (
-                          <p className="truncate text-[12px] leading-4 text-[#404944]">{subject.meta}</p>
+                          <p className="truncate text-[12px] leading-4 text-muted">{subject.meta}</p>
                         )}
                       </div>
 
@@ -123,8 +123,8 @@ export function AddPresensiModal({
                               onClick={() => setStatus(subject.id, status)}
                               className={`rounded-full border px-3 py-1 text-[12px] leading-4 font-semibold tracking-[0.6px] whitespace-nowrap ${
                                 active
-                                  ? "border-transparent bg-[#6cf8bb] text-[#00714d]"
-                                  : "border-[#e1e3e4] text-[#404944] hover:bg-[#edeeef]"
+                                  ? "border-transparent bg-mint text-on-mint"
+                                  : "border-line text-muted hover:bg-hover"
                               }`}
                             >
                               {status}
@@ -141,7 +141,7 @@ export function AddPresensiModal({
                         placeholder="Keterangan (opsional)"
                         value={notes[subject.id] ?? ""}
                         onChange={(event) => setNote(subject.id, event.target.value)}
-                        className="w-full rounded-lg border border-[#e1e3e4] bg-[#f8f9fa] px-3 py-2 text-[13px] leading-4 text-[#191c1d] outline-none placeholder:text-[#8a9490] focus:bg-white"
+                        className="w-full rounded-lg border border-line bg-page px-3 py-2 text-[13px] leading-4 text-ink outline-none placeholder:text-soft focus:bg-field"
                       />
                     </label>
                   </li>
@@ -151,17 +151,17 @@ export function AddPresensiModal({
           </form>
         </div>
 
-        <div className="flex flex-col-reverse gap-3 border-t border-[#e1e3e4] px-6 py-4 sm:flex-row sm:justify-end">
+        <div className="flex flex-col-reverse gap-3 border-t border-line px-6 py-4 sm:flex-row sm:justify-end">
           <button
             type="button"
             onClick={onClose}
-            className="rounded-lg border border-[#e1e3e4] px-6 py-[9.5px] text-center text-[12px] leading-4 font-semibold tracking-[0.6px] text-[#404944] hover:bg-[#edeeef]"
+            className="rounded-lg border border-line px-6 py-[9.5px] text-center text-[12px] leading-4 font-semibold tracking-[0.6px] text-muted hover:bg-hover"
           >
             Batal
           </button>
           <button
             type="button"
-            className="rounded-lg bg-[#003527] px-8 py-[9.5px] text-center text-[12px] leading-4 font-semibold tracking-[0.6px] text-white shadow-[0px_1px_1px_0px_rgba(0,0,0,0.05)] hover:bg-[#064e3b]"
+            className="rounded-lg bg-brand px-8 py-[9.5px] text-center text-[12px] leading-4 font-semibold tracking-[0.6px] text-on-brand shadow-[0px_1px_1px_0px_rgba(0,0,0,0.05)] hover:bg-brand-hover"
           >
             Simpan Presensi
           </button>

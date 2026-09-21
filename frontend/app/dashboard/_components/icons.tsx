@@ -133,10 +133,65 @@ export const icons = {
     </>
   ),
   moon: <path d="M20 14.5A8.5 8.5 0 1 1 9.5 4a7 7 0 0 0 10.5 10.5Z" />,
+  sun: (
+    <>
+      <circle cx="12" cy="12" r="4" />
+      <path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4" />
+    </>
+  ),
   menu: <path d="M3.5 6.5h17M3.5 12h17M3.5 17.5h17" />,
   close: <path d="M6 6l12 12M18 6 6 18" />,
   trendUp: <path d="M4 15 10 9l4 4 6-7" />,
   trendDown: <path d="M4 8 10 14l4-4 6 7" />,
+  chevronDown: <path d="m7 10 5 5 5-5" />,
+  edit: (
+    <>
+      <path d="M4 20h4L18.5 9.5a2.83 2.83 0 0 0-4-4L4 16z" />
+      <path d="m13.5 6.5 4 4" />
+    </>
+  ),
+  plus: <path d="M12 5v14M5 12h14" />,
+  key: (
+    <>
+      <circle cx="7.5" cy="15.5" r="3.5" />
+      <path d="m10 13 8.5-8.5" />
+      <path d="M15.5 7.5 18 10" />
+      <path d="M18 5l2 2" />
+    </>
+  ),
+  download: (
+    <>
+      <path d="M12 3v12" />
+      <path d="m7 11 5 5 5-5" />
+      <path d="M5 21h14" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M4 7h16" />
+      <path d="M10 4h4M7 7l1 13a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-13" />
+      <path d="M10 11v6M14 11v6" />
+    </>
+  ),
+  circleCheck: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m8 12.5 3 3 5-6" />
+    </>
+  ),
+  circleX: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="m9 9 6 6M15 9l-6 6" />
+    </>
+  ),
+  externalLink: (
+    <>
+      <path d="M14 4h6v6" />
+      <path d="M20 4 10 14" />
+      <path d="M18 13.5V19a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1h5.5" />
+    </>
+  ),
 };
 
 export type IconName = keyof typeof icons;

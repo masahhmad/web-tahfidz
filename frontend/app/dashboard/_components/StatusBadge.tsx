@@ -1,10 +1,10 @@
 export type AttendanceStatus = "Hadir" | "Izin" | "Sakit" | "Alpa";
 
 const STATUS_STYLES: Record<AttendanceStatus, string> = {
-  Hadir: "bg-[#6cf8bb] text-[#00714d]",
-  Izin: "bg-[#edeeef] text-[#404944]",
-  Sakit: "bg-[#fdecc8] text-[#8a5a00]",
-  Alpa: "bg-[#fbd1d1] text-[#a01818]",
+  Hadir: "bg-mint text-on-mint",
+  Izin: "bg-hover text-muted",
+  Sakit: "bg-warn text-on-warn",
+  Alpa: "bg-bad text-on-bad",
 };
 
 export function StatusBadge({ status }: { status: AttendanceStatus }) {
