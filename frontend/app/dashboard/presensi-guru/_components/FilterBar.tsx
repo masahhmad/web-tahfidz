@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { AddPresensiGuruModal } from "./AddPresensiGuruModal";
+import { AddPresensiGuruModal, type NewPresensiGuru } from "./AddPresensiGuruModal";
 
 const SESSION_OPTIONS = [
   { value: "pagi", label: "Sesi Pagi" },
@@ -11,10 +11,11 @@ const SESSION_OPTIONS = [
 
 /* -------------------------------------------------------------------------
  * FilterBar — date/time + session filters plus the "Buat Presensi" action,
- * which opens AddPresensiGuruModal for the currently selected session.
- * Stacks vertically on mobile/tablet, sits in one row from sm up.
+ * which opens AddPresensiGuruModal for the currently selected session; a saved
+ * presensi (with the user's coordinates) is handed up through `onCreate` along
+ * with the session it was made for. Stacks vertically on mobile/tablet, sits in one row from sm up.
  * ---------------------------------------------------------------------- */
-export function FilterBar() {
+export function FilterBar({ onCreate }: { onCreate: (presensi: NewPresensiGuru & { session: string }) => void }) {
   const [session, setSession] = useState<(typeof SESSION_OPTIONS)[number]["value"]>("pagi");
   const [isModalOpen, setIsModalOpen] = useState(false);
 
@@ -55,7 +56,12 @@ export function FilterBar() {
         Buat Presensi
       </button>
 
-      <AddPresensiGuruModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} sessionName={sessionLabel} />
+      <AddPresensiGuruModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        sessionName={sessionLabel}
+        onSubmit={(presensi) => onCreate({ ...presensi, session: sessionLabel.replace("Sesi ", "") })}
+      />
     </div>
   );
 }

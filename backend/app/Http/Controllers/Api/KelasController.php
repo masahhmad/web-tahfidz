@@ -3,92 +3,104 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Http\Resources\KelasResource;
 use App\Models\Kelas;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 
+/**
+ * Kelas sekaligus menu Target (`target_hafalan` = total juz per kelas dalam setahun).
+ * super_admin & admin membaca, admin menulis (diatur di routes/api.php).
+ */
 class KelasController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index(): JsonResponse
+    public function index(Request $request): JsonResponse
     {
-        $data = Kelas::all();
-        return response()->json([
-            'status'  => 'success',
-            'data'    => $data
-        ]);
+        $request->validate(['kategori' => ['nullable', Rule::in(['ikh', 'akh'])]]);
+
+        $kelas = Kelas::query()
+            ->withCount('santri')
+            ->when($request->query('search'), fn ($q, $term) => $q->where('kelas', 'like', $this->like($term)))
+            ->when($request->query('kategori'), fn ($q, $kategori) => $q->where('kategori', $kategori))
+            ->orderBy('kelas')
+            ->orderBy('kategori')
+            ->paginate($this->perPage($request));
+
+        return $this->paginated($kelas, KelasResource::class);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    public function show(Kelas $kelas): JsonResponse
+    {
+        return $this->item(new KelasResource($kelas->loadCount('santri')));
+    }
+
     public function store(Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'kelas'=>'required',
-            'kategori'=> ['required', Rule::in(['ikh', 'akh'])],
+            'kelas'          => 'required|string|max:50',
+            'kategori'       => ['required', Rule::in(['ikh', 'akh'])],
+            'target_hafalan' => 'nullable|integer|between:1,30',
         ]);
+
+        if (Kelas::where('kelas', $validated['kelas'])->where('kategori', $validated['kategori'])->exists()) {
+            return $this->duplicate();
+        }
 
         $kelas = Kelas::create($validated);
 
-        return response()->json([
-            'status' => 'success',
-            'kelas' => $kelas
-        ]);
+        return $this->item(new KelasResource($kelas->loadCount('santri')), 201);
     }
 
     /**
-     * Display the specified resource.
+     * Popup pensil di halaman Target hanya mengirim `target_hafalan`, jadi field lain opsional.
      */
-    public function show(string $id): JsonResponse
-    {
-        $kelas = Kelas::findOrFail($id);
-
-        if (!$kelas) {
-            return response()->json([
-                'status' => 'failed',
-                'message' => 'User not found'
-            ]);
-        }
-
-        return response()->json([
-            'status' => 'success',
-            'message' => 'Success get kelas',
-            'kelas' => $kelas
-        ]);
-    }
-
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Kelas $kelas)
+    public function update(Request $request, Kelas $kelas): JsonResponse
     {
         $validated = $request->validate([
-            'kategori'=> ['required', Rule::in(['ikh', 'akh'])],
+            'kelas'          => 'sometimes|required|string|max:50',
+            'kategori'       => ['sometimes', 'required', Rule::in(['ikh', 'akh'])],
+            'target_hafalan' => 'sometimes|nullable|integer|between:1,30',
         ]);
 
-        $kelas->update($validated);
+        $nama = $validated['kelas'] ?? $kelas->kelas;
+        $kategori = $validated['kategori'] ?? $kelas->kategori;
 
-        return response()->json([
-            'status'  => 'success',
-            'message' => 'Data kelas berhasil diperbarui',
-            'data'    => $kelas
-        ]);
+        $bentrok = Kelas::where('kelas', $nama)->where('kategori', $kategori)->where('id', '!=', $kelas->id)->exists();
+        if ($bentrok) {
+            return $this->duplicate();
+        }
+
+        DB::transaction(function () use ($kelas, $validated, $kategori) {
+            $kelas->update($validated);
+
+            // Kategori siswa mengikuti kelasnya.
+            if (array_key_exists('kategori', $validated)) {
+                $kelas->santri()->update(['kategori' => $kategori]);
+            }
+        });
+
+        return $this->item(new KelasResource($kelas->loadCount('santri')));
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(Kelas $kelas)
+    public function destroy(Kelas $kelas): JsonResponse|Response
     {
+        if ($kelas->santri()->exists()) {
+            return $this->message('Kelas tidak dapat dihapus karena masih memiliki siswa.', 422);
+        }
+
         $kelas->delete();
 
+        return response()->noContent();
+    }
+
+    private function duplicate(): JsonResponse
+    {
         return response()->json([
-            'status'  => 'success',
-            'message' => 'Data kelas berhasil dihapus'
-        ]);
+            'message' => 'The given data was invalid.',
+            'errors'  => ['kelas' => ['Kelas dengan kategori tersebut sudah ada.']],
+        ], 422);
     }
 }

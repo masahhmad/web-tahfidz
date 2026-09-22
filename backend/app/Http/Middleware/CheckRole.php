@@ -14,22 +14,23 @@ class CheckRole
      * @param  Closure(Request): (Response)  $next
      * @param  string  ...$roles  Array role yang diizinkan mengakses route ini
      */
-    public function handle(Request $request, Closure $next, ...$roles): Response
+    public function handle(Request $request, Closure $next, string ...$roles): Response
     {
-        if(!auth('api')->check()){
-            return response()->json([
-                'status'  => 'error',
-                'message' => 'Unauthenticated, Silakan login terlebih dahulu.'
-            ]);
-        }
-
         $user = auth('api')->user();
 
-        if (! in_array($user->role, $roles)) {
+        if (! $user) {
             return response()->json([
-                'status'  => 'error',
-                'message' => 'Akses ditolak, anda tidak memiliki akses untuk fitur ini.'
-            ]);
+                'message' => 'Silakan login terlebih dahulu.',
+            ], 401);
+        }
+
+        // Toleran terhadap spasi: `role:admin, guru_halaqah` dipecah Laravel menjadi ['admin', ' guru_halaqah'].
+        $allowed = array_map('trim', $roles);
+
+        if (! in_array($user->role, $allowed, true)) {
+            return response()->json([
+                'message' => 'Akses ditolak, anda tidak memiliki akses untuk fitur ini.',
+            ], 403);
         }
 
         return $next($request);

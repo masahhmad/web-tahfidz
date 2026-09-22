@@ -15,7 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('kelas');
             $table->enum('kategori', ['ikh', 'akh']);
-            $table->integer('target_hafalan');
+            $table->integer('target_hafalan')->nullable();
             $table->timestamps();
         });
     }

@@ -4,7 +4,7 @@ import { useState } from "react";
 import { NavIcon, icons } from "../../_components/icons";
 import { AddPenggunaModal } from "./AddPenggunaModal";
 
-const ROLE_OPTIONS = ["Admin", "Guru Pengampu", "Wali Kelas"];
+const ROLE_OPTIONS = ["Admin", "Guru Pengampu"];
 
 /* -------------------------------------------------------------------------
  * FilterBar — role filter on the left, "Tambah Pengguna" action on the
