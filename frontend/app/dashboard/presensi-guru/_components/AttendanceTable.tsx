@@ -13,17 +13,14 @@ export type AttendanceRecord = {
 
 const COLUMNS = ["No", "Tanggal", "Sesi", "Status", "Waktu", "Lokasi", "Keterangan"] as const;
 
-const RECORDS: AttendanceRecord[] = [
-  { no: 1, date: "10/8/2026", session: "Pagi", status: "Hadir", time: "05.00", location: "011011011011011011", note: "-" },
-];
-
 /* -------------------------------------------------------------------------
  * AttendanceTable — semantic <table> so screen readers get real row/column
  * relationships; wrapped in its own overflow-x-auto so the wide table
  * scrolls horizontally on mobile/tablet instead of squeezing columns or
- * breaking the page layout.
+ * breaking the page layout. "Lokasi" shows the "latitude,longitude" captured
+ * when the presensi was saved.
  * ---------------------------------------------------------------------- */
-export function AttendanceTable() {
+export function AttendanceTable({ records }: { records: AttendanceRecord[] }) {
   return (
     <div className="w-full overflow-hidden rounded-xl border border-card-edge bg-card shadow-[0px_4px_20px_0px_rgba(0,0,0,0.03)]">
       <div className="w-full overflow-x-auto">
@@ -42,7 +39,7 @@ export function AttendanceTable() {
             </tr>
           </thead>
           <tbody>
-            {RECORDS.map((record) => (
+            {records.map((record) => (
               <tr key={record.no} className="border-b border-divider last:border-b-0">
                 <td className="px-6 py-2.5 text-[14px] leading-5 text-muted">{record.no}</td>
                 <td className="px-6 py-2.5 text-[14px] leading-5 text-ink whitespace-nowrap">{record.date}</td>

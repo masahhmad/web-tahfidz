@@ -165,7 +165,7 @@ export function EditPenggunaModal({
                 </span>
               ) : (
                 <span id="edit-pengguna-telp-hint" className="text-[12px] leading-4 text-soft">
-                  {phoneRequired ? "Wajib diisi. " : ""}Contoh: 0821-4298-6689
+                  {phoneRequired ? "Wajib diisi. " : ""}Contoh: 082123456789
                 </span>
               )}
             </label>

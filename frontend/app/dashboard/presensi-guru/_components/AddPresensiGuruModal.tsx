@@ -1,10 +1,24 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useCallback, useRef, useState, type FormEvent } from "react";
 import { useModalA11y } from "../../_components/useModalA11y";
+import {
+  formatCoordinates,
+  getCurrentCoordinates,
+  LocationError,
+  LOCATION_FALLBACK_ERROR,
+} from "../../_lib/geolocation";
 
 const STATUS_OPTIONS = ["Hadir", "Izin", "Sakit", "Alpa"] as const;
 type GuruAttendanceStatus = (typeof STATUS_OPTIONS)[number];
+
+/** What "Simpan Presensi" hands back. The time is not included: the server stamps it on creation. */
+export type NewPresensiGuru = {
+  status: GuruAttendanceStatus;
+  note: string;
+  /** "latitude,longitude" of the user at the moment of saving. */
+  lokasi: string;
+};
 
 /* -------------------------------------------------------------------------
  * AddPresensiGuruModal — single-entry "Tambah Presensi" popup for a guru's
@@ -12,32 +26,73 @@ type GuruAttendanceStatus = (typeof STATUS_OPTIONS)[number];
  * then Keterangan). Keterangan is optional for "Hadir" and required for any
  * other status, enforced both visually (asterisk, placeholder) and natively
  * via the `required` attribute on the textarea.
+ *
+ * Saving also captures where the user is: pressing "Simpan Presensi" asks the
+ * browser for the current coordinates (permission prompt on first use) and
+ * only then calls `onSubmit`. If the location can't be read (denied, GPS off,
+ * timeout) the modal stays open with a message so the user can fix it and
+ * retry — closing the modal while it is still locating discards the result.
  * ---------------------------------------------------------------------- */
 export function AddPresensiGuruModal({
   isOpen,
   onClose,
   sessionName,
+  onSubmit,
 }: {
   isOpen: boolean;
   onClose: () => void;
   sessionName: string;
+  onSubmit: (presensi: NewPresensiGuru) => void;
 }) {
-  const panelRef = useModalA11y(isOpen, onClose);
   const [status, setStatus] = useState<GuruAttendanceStatus>("Hadir");
   const [note, setNote] = useState("");
+  const [isLocating, setIsLocating] = useState(false);
+  const [locationError, setLocationError] = useState<string | null>(null);
+  // Bumped on every save attempt and on close, so a slow location result that
+  // arrives after the user cancelled (or retried) is ignored.
+  const attemptRef = useRef(0);
   const isNoteRequired = status !== "Hadir";
+
+  const handleClose = useCallback(() => {
+    attemptRef.current += 1;
+    setIsLocating(false);
+    setLocationError(null);
+    onClose();
+  }, [onClose]);
+
+  const panelRef = useModalA11y(isOpen, handleClose);
 
   if (!isOpen) return null;
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    onClose();
+    if (isLocating) return;
+
+    const attempt = ++attemptRef.current;
+    setLocationError(null);
+    setIsLocating(true);
+
+    try {
+      const coordinates = await getCurrentCoordinates();
+      if (attempt !== attemptRef.current) return;
+
+      onSubmit({ status, note: note.trim(), lokasi: formatCoordinates(coordinates) });
+      setStatus("Hadir");
+      setNote("");
+      setIsLocating(false);
+      onClose();
+    } catch (error) {
+      if (attempt !== attemptRef.current) return;
+
+      setLocationError(error instanceof LocationError ? error.message : LOCATION_FALLBACK_ERROR);
+      setIsLocating(false);
+    }
   }
 
   return (
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
-      onClick={onClose}
+      onClick={handleClose}
     >
       <div
         ref={panelRef}
@@ -53,7 +108,7 @@ export function AddPresensiGuruModal({
           </h2>
           <button
             type="button"
-            onClick={onClose}
+            onClick={handleClose}
             aria-label="Tutup"
             className="rounded p-1 text-muted hover:bg-hover"
           >
@@ -98,19 +153,31 @@ export function AddPresensiGuruModal({
             />
           </label>
 
+          {locationError ? (
+            <p role="alert" className="rounded-lg bg-bad px-3 py-2 text-[12px] leading-4 font-medium text-on-bad">
+              {locationError}
+            </p>
+          ) : (
+            <p className="text-[12px] leading-4 text-soft">
+              Lokasi Anda akan dicatat saat presensi disimpan. Izinkan akses lokasi jika diminta browser.
+            </p>
+          )}
+
           <div className="flex flex-col-reverse gap-3 pt-2 sm:flex-row sm:justify-end">
             <button
               type="button"
-              onClick={onClose}
+              onClick={handleClose}
               className="rounded-lg border border-line px-6 py-[9.5px] text-center text-[12px] leading-4 font-semibold tracking-[0.6px] text-muted hover:bg-hover"
             >
               Batal
             </button>
             <button
               type="submit"
-              className="rounded-lg bg-brand px-8 py-[9.5px] text-center text-[12px] leading-4 font-semibold tracking-[0.6px] text-on-brand shadow-[0px_1px_1px_0px_rgba(0,0,0,0.05)] hover:bg-brand-hover"
+              disabled={isLocating}
+              aria-busy={isLocating}
+              className="rounded-lg bg-brand px-8 py-[9.5px] text-center text-[12px] leading-4 font-semibold tracking-[0.6px] text-on-brand shadow-[0px_1px_1px_0px_rgba(0,0,0,0.05)] hover:bg-brand-hover disabled:opacity-60"
             >
-              Simpan Presensi
+              {isLocating ? "Mengambil lokasi…" : "Simpan Presensi"}
             </button>
           </div>
         </form>
