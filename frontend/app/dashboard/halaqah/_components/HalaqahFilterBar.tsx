@@ -8,10 +8,11 @@ const CLASS_OPTIONS = ["7A", "7B", "8A", "8B", "9A", "9B"];
 
 /* -------------------------------------------------------------------------
  * HalaqahFilterBar — pengampu / kelas filters for the read-only table, plus
- * the "Atur Halaqah" action that opens the assignment bar below. Filters
+ * the "Atur Halaqah" action that opens the assignment bar below (omitted
+ * when `onOpenAssign` is not given, i.e. for a read-only super admin). Filters
  * stack full-width on mobile and sit inline with the action from sm up.
  * ---------------------------------------------------------------------- */
-export function HalaqahFilterBar({ onOpenAssign }: { onOpenAssign: () => void }) {
+export function HalaqahFilterBar({ onOpenAssign }: { onOpenAssign?: () => void }) {
   const [pengampu, setPengampu] = useState("");
   const [className, setClassName] = useState("");
 
@@ -57,13 +58,15 @@ export function HalaqahFilterBar({ onOpenAssign }: { onOpenAssign: () => void })
         </label>
       </div>
 
-      <button
-        type="button"
-        onClick={onOpenAssign}
-        className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-2 text-[12px] leading-5 font-semibold tracking-[0.6px] text-on-brand shadow-[0px_1px_1px_0px_rgba(0,0,0,0.05)] hover:bg-brand-hover sm:w-auto"
-      >
-        Atur Halaqah
-      </button>
+      {onOpenAssign && (
+        <button
+          type="button"
+          onClick={onOpenAssign}
+          className="inline-flex w-full items-center justify-center gap-2 rounded-lg bg-brand px-6 py-2 text-[12px] leading-5 font-semibold tracking-[0.6px] text-on-brand shadow-[0px_1px_1px_0px_rgba(0,0,0,0.05)] hover:bg-brand-hover sm:w-auto"
+        >
+          Atur Halaqah
+        </button>
+      )}
     </div>
   );
 }

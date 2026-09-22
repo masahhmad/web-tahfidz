@@ -4,16 +4,19 @@ import { useState } from "react";
 import { HalaqahFilterBar } from "./HalaqahFilterBar";
 import { AssignHalaqahBar } from "./AssignHalaqahBar";
 import { HalaqahTable } from "./HalaqahTable";
+import { useCanManageMasterData } from "../../_components/session";
 
 /* -------------------------------------------------------------------------
  * HalaqahManager — owns the "Atur Halaqah" flow shared by the filter bar,
  * the assignment bar, and the table's checkbox column: opening "Atur
  * Halaqah" reveals AssignHalaqahBar and switches the table into selection
- * mode; Batal/Simpan both close it and clear the selection.
+ * mode; Batal/Simpan both close it and clear the selection. A read-only
+ * super admin gets neither the button nor the selection mode.
  * ---------------------------------------------------------------------- */
 export function HalaqahManager() {
   const [isAssigning, setIsAssigning] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const canManage = useCanManageMasterData();
 
   function toggleStudent(id: number) {
     setSelectedIds((prev) => {
@@ -34,9 +37,13 @@ export function HalaqahManager() {
 
   return (
     <>
-      <HalaqahFilterBar onOpenAssign={() => setIsAssigning(true)} />
-      {isAssigning && <AssignHalaqahBar onCancel={closeAssign} onSave={closeAssign} />}
-      <HalaqahTable isAssigning={isAssigning} selectedIds={selectedIds} onToggleStudent={toggleStudent} />
+      <HalaqahFilterBar onOpenAssign={canManage ? () => setIsAssigning(true) : undefined} />
+      {canManage && isAssigning && <AssignHalaqahBar onCancel={closeAssign} onSave={closeAssign} />}
+      <HalaqahTable
+        isAssigning={canManage && isAssigning}
+        selectedIds={selectedIds}
+        onToggleStudent={toggleStudent}
+      />
     </>
   );
 }

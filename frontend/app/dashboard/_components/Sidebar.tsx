@@ -1,9 +1,11 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import Link from "next/link";
 import { NavIcon, icons } from "./icons";
-import { NAV_ITEMS, FOOTER_ITEMS, type NavItem } from "./nav-data";
+import { NAV_ITEMS, FOOTER_ITEMS, canAccessNav, type NavItem } from "./nav-data";
+import { useSession } from "./session";
+import { buildHelpOptions, getHelpContacts } from "../../_lib/contacts";
 
 /* -------------------------------------------------------------------------
  * SidebarItem — one nav row, active/inactive states from Figma
@@ -46,6 +48,60 @@ function SidebarItem({
 }
 
 /* -------------------------------------------------------------------------
+ * HelpMenu — the "Bantuan" footer row as a disclosure dropdown: pressing it
+ * expands the Admin / Developer WhatsApp contacts right below it (inline, so
+ * it also works inside the scrollable mobile drawer without being clipped).
+ * A contact nobody has filled in yet shows as plain, non-clickable text.
+ * ---------------------------------------------------------------------- */
+function HelpMenu({ item, onNavigate }: { item: NavItem; onNavigate?: () => void }) {
+  const [isOpen, setIsOpen] = useState(false);
+  const menuId = useId();
+  const options = buildHelpOptions(getHelpContacts());
+
+  const rowClass = "flex w-full items-center rounded-lg px-4 py-2.5 text-[14px] leading-[20px]";
+
+  return (
+    <div>
+      <button
+        type="button"
+        onClick={() => setIsOpen((open) => !open)}
+        aria-expanded={isOpen}
+        aria-controls={menuId}
+        className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-[14px] leading-[20px] text-muted transition-colors hover:bg-hover-soft"
+      >
+        <NavIcon size={15}>{icons[item.icon]}</NavIcon>
+        <span className="flex-1 text-left">{item.label}</span>
+        <NavIcon size={15} className={`transition-transform ${isOpen ? "rotate-180" : ""}`}>
+          {icons.chevronDown}
+        </NavIcon>
+      </button>
+
+      {isOpen && (
+        <ul id={menuId} className="mt-1 flex flex-col gap-1 pl-7">
+          {options.map((option) => (
+            <li key={option.id}>
+              {option.href ? (
+                <a
+                  href={option.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={onNavigate}
+                  className={`${rowClass} text-muted transition-colors hover:bg-hover-soft`}
+                >
+                  {option.label}
+                </a>
+              ) : (
+                <span className={`${rowClass} cursor-default text-soft`}>{option.unavailableText}</span>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------------------
  * SidebarContent — the nav list shared verbatim by the static desktop
  * sidebar and the mobile off-canvas drawer.
  * ---------------------------------------------------------------------- */
@@ -58,6 +114,9 @@ function SidebarContent({
   onNavigate?: () => void;
   onClose?: () => void;
 }) {
+  const { user } = useSession();
+  const navItems = NAV_ITEMS.filter((item) => canAccessNav(item, user.role));
+
   return (
     <div className="flex h-full w-[260px] flex-col gap-3 overflow-y-auto bg-card px-4 pt-8 pb-3 shadow-[0px_4px_20px_0px_rgba(0,0,0,0.03)]">
       {/* Header / Logo Area */}
@@ -91,7 +150,7 @@ function SidebarContent({
 
       {/* Navigation Links */}
       <ul className="flex w-full flex-1 flex-col gap-2">
-        {NAV_ITEMS.map((item) => (
+        {navItems.map((item) => (
           <li key={item.id}>
             <SidebarItem item={item} isActive={item.id === activeId} onClick={onNavigate} />
           </li>
@@ -100,9 +159,13 @@ function SidebarContent({
 
       {/* Footer Links */}
       <div className="flex w-full flex-col gap-2 border-t border-line pt-[13px]">
-        {FOOTER_ITEMS.map((item) => (
-          <SidebarItem key={item.id} item={item} isActive={false} onClick={onNavigate} />
-        ))}
+        {FOOTER_ITEMS.map((item) =>
+          item.id === "bantuan" ? (
+            <HelpMenu key={item.id} item={item} onNavigate={onNavigate} />
+          ) : (
+            <SidebarItem key={item.id} item={item} isActive={false} onClick={onNavigate} />
+          ),
+        )}
       </div>
     </div>
   );

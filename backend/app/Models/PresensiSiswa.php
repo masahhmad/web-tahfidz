@@ -7,13 +7,26 @@ use Illuminate\Database\Eloquent\Model;
 class PresensiSiswa extends Model
 {
     protected $fillable = [
+        'santri_id',
+        'guru_id',
+        'tanggal',
+        'sesi',
         'status',
         'keterangan',
-        'santri_id'
     ];
+
+    protected function casts(): array
+    {
+        return ['tanggal' => 'date:Y-m-d'];
+    }
 
     public function santri()
     {
-        return $this->belongsTo(Santri::class);
+        return $this->belongsTo(Santri::class)->withTrashed();
+    }
+
+    public function pencatat()
+    {
+        return $this->belongsTo(User::class, 'guru_id');
     }
 }
