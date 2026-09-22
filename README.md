@@ -1,107 +1,107 @@
 # Web Tahfidz
 
-Aplikasi manajemen tahfidz (presensi, setoran hafalan, ujian kenaikan juz, ujian tahfidz, dan manajemen data master) dengan backend **Laravel 13** (PHP 8.3) dan frontend **Next.js 16**.
+A tahfidz management application (attendance, memorization deposits, juz advancement exams, tahfidz exams, and master data management) with a **Laravel 13** (PHP 8.3) backend and a **Next.js 16** frontend.
 
-Lihat [`api-spec.md`](./api-spec.md) untuk dokumentasi endpoint API.
+See [`api-spec.md`](./api-spec.md) for the API endpoint documentation.
 
-## Struktur Project
+## Project Structure
 
 ```
 .
-├── backend/    # API Laravel (PHP 8.3, Sanctum + JWT)
-└── frontend/   # Web app Next.js (React 19, Tailwind 4)
+├── backend/    # Laravel API (PHP 8.3, Sanctum + JWT)
+└── frontend/   # Next.js web app (React 19, Tailwind 4)
 ```
 
-## Menjalankan dengan Docker (disarankan)
+## Running with Docker (recommended)
 
-Cara tercepat untuk menjalankan project ini secara lokal.
+The fastest way to run this project locally.
 
-### Prasyarat
+### Prerequisites
 
 - [Docker](https://docs.docker.com/get-docker/) & Docker Compose v2
 
-### Langkah
+### Steps
 
-1. Clone repo dan masuk ke folder project.
-2. Jalankan:
+1. Clone the repo and enter the project folder.
+2. Run:
 
    ```bash
    docker compose up --build
    ```
 
-   Saat pertama kali dijalankan, container backend akan otomatis:
-   - Membuat `backend/.env` dari `backend/.env.example` (jika belum ada)
+   On first run, the backend container will automatically:
+   - Create `backend/.env` from `backend/.env.example` (if it doesn't exist yet)
    - Generate `APP_KEY`
-   - Membuat file `database/database.sqlite` (default `DB_CONNECTION=sqlite`)
-   - Menjalankan migrasi database
+   - Create the `database/database.sqlite` file (default `DB_CONNECTION=sqlite`)
+   - Run database migrations
 
-3. Setelah container siap, akses:
+3. Once the containers are ready, access:
    - **Frontend**: http://localhost:3000
    - **Backend API**: http://localhost:8000
 
-4. Untuk menjalankan di background:
+4. To run in the background:
 
    ```bash
    docker compose up --build -d
    ```
 
-5. Untuk menghentikan:
+5. To stop:
 
    ```bash
    docker compose down
    ```
 
-### Perintah berguna lainnya
+### Other useful commands
 
-Menjalankan `artisan` atau `composer` di dalam container backend:
+Running `artisan` or `composer` inside the backend container:
 
 ```bash
 docker compose exec backend php artisan migrate:fresh --seed
 docker compose exec backend php artisan tinker
 ```
 
-Menjalankan perintah `npm` di dalam container frontend:
+Running `npm` commands inside the frontend container:
 
 ```bash
 docker compose exec frontend npm run lint
 ```
 
-Melihat log:
+Viewing logs:
 
 ```bash
 docker compose logs -f backend
 docker compose logs -f frontend
 ```
 
-Rebuild image setelah mengubah `composer.json` / `package.json`:
+Rebuilding images after changing `composer.json` / `package.json`:
 
 ```bash
 docker compose up --build
 ```
 
-> Kode di `backend/` dan `frontend/` di-*mount* langsung ke dalam container, jadi perubahan file akan otomatis ter-reload (hot reload untuk Next.js, tidak perlu restart untuk perubahan PHP).
+> Code in `backend/` and `frontend/` is mounted directly into the containers, so file changes reload automatically (hot reload for Next.js, no restart needed for PHP changes).
 
-## Menjalankan secara manual (tanpa Docker)
+## Running manually (without Docker)
 
 ### Backend (Laravel)
 
-Prasyarat: PHP 8.3+, Composer, ekstensi PHP standar Laravel.
+Prerequisites: PHP 8.3+, Composer, standard Laravel PHP extensions.
 
 ```bash
 cd backend
 composer install
 cp .env.example .env
 php artisan key:generate
-touch database/database.sqlite   # jika menggunakan sqlite (default)
+touch database/database.sqlite   # if using sqlite (default)
 php artisan migrate
 php artisan serve
 ```
 
-Backend berjalan di http://localhost:8000.
+The backend runs at http://localhost:8000.
 
 ### Frontend (Next.js)
 
-Prasyarat: Node.js 20+.
+Prerequisites: Node.js 20+.
 
 ```bash
 cd frontend
@@ -109,9 +109,9 @@ npm install
 npm run dev
 ```
 
-Frontend berjalan di http://localhost:3000.
+The frontend runs at http://localhost:3000.
 
-## Konfigurasi Environment
+## Environment Configuration
 
-- Konfigurasi backend ada di `backend/.env` (lihat `backend/.env.example` untuk daftar variabel).
-- Frontend membaca `NEXT_PUBLIC_API_URL` untuk mengetahui alamat API backend (diset otomatis ke `http://localhost:8000` saat dijalankan lewat Docker).
+- Backend configuration lives in `backend/.env` (see `backend/.env.example` for the list of variables).
+- The frontend reads `NEXT_PUBLIC_API_URL` to know the backend API address (automatically set to `http://localhost:8000` when run via Docker).
