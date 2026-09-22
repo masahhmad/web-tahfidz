@@ -60,7 +60,7 @@ const MOCK_USER: SessionUser = buildUser({
   nama: "Muhammad Zaid Burhanuddin",
   email: "zaidburhan@gmail.com",
   telp: null,
-  role: "super_admin",
+  role: "admin",
   kategori: null,
   jumlah_siswa: 0,
 });
